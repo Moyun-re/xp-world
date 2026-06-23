@@ -100,7 +100,8 @@
 
         .sidebar-shell {
             width: 100% !important;
-            height: 42dvh !important;
+            height: 100% !important;
+            min-height: 0 !important;
             opacity: 1 !important;
             pointer-events: auto !important;
         }
@@ -115,6 +116,7 @@
             .sidebar-shell {
                 width: 20rem !important;
                 height: auto !important;
+                min-height: 0;
             }
             .sidebar-shell.is-collapsed {
                 width: 0 !important;
@@ -126,45 +128,45 @@
 <body class="h-dvh overflow-hidden bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-dark-text">
     <div id="app" class="h-full min-h-0 flex flex-col relative">
         <!-- 顶部导航栏 -->
-        <header class="flex-none min-h-14 border-b border-slate-200 dark:border-dark-border bg-white/80 dark:bg-dark-panel/80 backdrop-blur-md px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2 shadow-sm z-30">
-            <div class="flex flex-wrap items-baseline gap-2 min-w-0">
-                <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+        <header class="flex-none h-12 sm:h-14 border-b border-slate-200 dark:border-dark-border bg-white/80 dark:bg-dark-panel/80 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between gap-2 shadow-sm z-30 overflow-hidden">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                <h1 class="text-base sm:text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight truncate">
                     XP大世界
                 </h1>
                 <!-- 版本号固定为 v0.9 -->
-                <span class="text-xs text-slate-400 dark:text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">v0.9</span>
+                <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">v0.9</span>
                 
-                <span class="text-xs text-slate-400 dark:text-slate-500 sm:border-l border-slate-300 dark:border-slate-600 sm:pl-3 sm:ml-2">
+                <span class="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 sm:border-l border-slate-300 dark:border-slate-600 sm:pl-3 sm:ml-2 whitespace-nowrap">
                     共 {{ totalEntries }} 个条目
                 </span>
             </div>
             
-            <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 min-w-0">
+            <div class="flex items-center justify-end gap-1 sm:gap-3 flex-none">
                 <input type="file" id="file-upload" class="hidden" accept=".json" @change="importJson">
                 
-                <button @click="triggerUpload" title="导入已有json文件" class="min-h-11 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 font-medium">
+                <button @click="triggerUpload" title="导入已有json文件" class="hidden sm:flex min-h-10 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors items-center gap-1.5 font-medium">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     导入
                 </button>
                 
-                <button @click="confirmExportAll" title="导出当前列表中的全部条目" class="min-h-11 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 font-medium">
+                <button @click="confirmExportAll" title="导出当前列表中的全部条目" class="hidden sm:flex min-h-10 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors items-center gap-1.5 font-medium">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     导出
                 </button>
 
-                <button @click="confirmDeleteAll" title="清空全部条目缓存" class="min-h-11 px-3 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30 rounded-md transition-colors flex items-center gap-1.5 font-medium">
+                <button @click="confirmDeleteAll" title="清空全部条目缓存" class="hidden sm:flex min-h-10 px-3 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30 rounded-md transition-colors items-center gap-1.5 font-medium">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     清空
                 </button>
                 
-                <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                <div class="hidden sm:block w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
 
-                <button @click="openNewEntryModal" title="新建一个 XP 设定条目" class="min-h-11 px-4 py-2 text-sm bg-slate-800 text-white hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white rounded-md transition-colors shadow-sm flex items-center gap-1.5 font-medium">
+                <button @click="openNewEntryModal" title="新建一个 XP 设定条目" class="min-h-10 px-3 sm:px-4 py-2 text-sm bg-slate-800 text-white hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white rounded-md transition-colors shadow-sm flex items-center gap-1.5 font-medium">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     新建
                 </button>
                 
-                <button @click="toggleDarkMode" class="min-h-11 min-w-11 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-hover transition-colors text-slate-500 dark:text-slate-400 ml-1">
+                <button @click="toggleDarkMode" class="min-h-10 min-w-10 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-hover transition-colors text-slate-500 dark:text-slate-400">
                     <svg v-if="isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
@@ -290,18 +292,12 @@
 
                 <!-- 侧边栏底部悬浮操作台 -->
                 <transition name="slide-up">
-                    <div v-if="selectedIds.length > 0" class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-slate-200 dark:border-slate-700 p-3 z-30">
-                        <div class="flex items-center justify-between mb-2 px-1">
-                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">已选中 {{ selectedIds.length }} 项</span>
-                            <button @click="clearSelection" class="min-h-11 px-2 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">清空</button>
-                        </div>
-                        <div class="flex gap-2">
-                            <button @click="exportSelected" class="flex-1 min-h-11 py-2 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 rounded transition-colors border border-slate-200 dark:border-slate-600">
-                                导出
-                            </button>
-                            <button @click="confirmDeleteSelected" class="flex-1 min-h-11 py-2 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded transition-colors border border-red-200 dark:border-red-800/50">
-                                删除
-                            </button>
+                    <div v-if="selectedIds.length > 0" class="selection-bar absolute bottom-2 left-2 right-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-lg border border-slate-200 dark:border-slate-700 px-2 py-2 z-30 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <span class="flex-1 min-w-0 text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">已选中 {{ selectedIds.length }} 项</span>
+                            <button @click="clearSelection" class="selection-clear min-h-9 px-2.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 dark:text-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg transition-colors">清空</button>
+                            <button @click="exportSelected" class="min-h-9 px-2.5 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors border border-slate-200 dark:border-slate-600">导出</button>
+                            <button @click="confirmDeleteSelected" class="min-h-9 px-2.5 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-lg transition-colors border border-red-200 dark:border-red-800/50">删除</button>
                         </div>
                     </div>
                 </transition>
@@ -313,7 +309,8 @@
             </button>
 
             <!-- 右侧沉浸式编辑区 -->
-            <div class="flex-1 min-h-0 flex flex-col bg-white dark:bg-[#0b1120] relative transition-colors duration-200 ease-in-out">
+            <div class="flex-1 min-h-0 flex flex-col bg-white dark:bg-[#0b1120] relative transition-colors duration-200 ease-in-out"
+                 :class="{ 'hidden md:flex': !isSidebarCollapsed }">
                 <div v-if="!selectedEntry" class="absolute inset-0 flex items-center justify-center flex-col gap-5 p-6 text-center">
                     <svg class="w-12 h-12 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <p class="text-slate-400 dark:text-slate-500 text-sm tracking-wide">在左侧选择设定进行编辑，或创建新条目</p>
@@ -966,6 +963,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 

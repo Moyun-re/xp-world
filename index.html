@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XP大世界</title>
+    <title>XP World</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -13,12 +13,12 @@
                 extend: {
                     colors: {
                         dark: {
-                            bg: '#0f172a', /* slate-900 */
-                            panel: '#1e293b', /* slate-800 */
-                            border: '#334155', /* slate-700 */
-                            text: '#f1f5f9', /* slate-100 */
-                            primary: '#94a3b8', /* slate-400 */
-                            hover: '#334155' /* slate-700 */
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            border: '#334155',
+                            text: '#f1f5f9',
+                            primary: '#94a3b8',
+                            hover: '#334155'
                         }
                     }
                 }
@@ -36,11 +36,11 @@
             background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1; /* slate-300 */
+            background-color: #cbd5e1;
             border-radius: 10px;
         }
         .dark ::-webkit-scrollbar-thumb {
-            background-color: #475569; /* slate-600 */
+            background-color: #475569;
         }
         
         body {
@@ -48,7 +48,6 @@
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
         }
 
-        /* 移除焦点轮廓，打造沉浸式输入体验 */
         textarea:focus, input:focus, select:focus {
             outline: none;
             box-shadow: none;
@@ -69,16 +68,14 @@
             position: relative;
         }
 
-        /* 侧边栏吸顶与毛玻璃，提升 z-index 确保覆盖列表项 */
         .category-header {
             position: sticky;
             top: 0;
-            z-index: 20; /* 修复了层级覆盖问题 */
+            z-index: 20;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
 
-        /* 隐藏无边框输入框的默认占位符颜色调整 */
         ::placeholder {
             color: #94a3b8;
         }
@@ -86,7 +83,6 @@
             color: #64748b;
         }
 
-        /* 底部操作面板动画 */
         .slide-up-enter-active,
         .slide-up-leave-active {
             transition: all 0.3s ease-out;
@@ -96,208 +92,257 @@
             transform: translateY(100%);
             opacity: 0;
         }
+
+        /* 侧边栏滑动动画（手机端抽屉） */
+        .sidebar-mobile {
+            transition: transform 0.3s ease-out;
+        }
+        
+        /* 侧边栏 PC 宽度过渡 */
+        @media (min-width: 768px) {
+            .sidebar-pc {
+                transition: width 0.3s ease-out;
+            }
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-dark-text">
-    <div id="app" class="h-full flex flex-col relative">
+    <div id="app" class="h-full flex flex-col relative" @click="fileMenuOpen=false">
         <!-- 顶部导航栏 -->
-        <header class="flex-none h-14 border-b border-slate-200 dark:border-dark-border bg-white/80 dark:bg-dark-panel/80 backdrop-blur-md px-5 flex items-center justify-between shadow-sm z-30">
-            <div class="flex items-baseline gap-2">
-                <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                    XP大世界
+        <header class="flex-none h-14 border-b border-slate-200 dark:border-dark-border bg-white/80 dark:bg-dark-panel/80 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between shadow-sm z-30">
+            <div class="flex items-center gap-2 min-w-0">
+                <!-- 侧边栏切换按钮 -->
+                <button @click="toggleSidebar" title="切换目录面板" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight truncate">
+                    XP World
                 </h1>
-                <!-- 版本号固定为 v0.9 -->
-                <span class="text-xs text-slate-400 dark:text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">v0.9</span>
-                
-                <span class="text-xs text-slate-400 dark:text-slate-500 border-l border-slate-300 dark:border-slate-600 pl-3 ml-2">
+                <span class="text-xs text-slate-400 dark:text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded flex-shrink-0">v1.0</span>
+                <span class="text-xs text-slate-400 dark:text-slate-500 border-l border-slate-300 dark:border-slate-600 pl-3 ml-2 hidden sm:inline-block">
                     共 {{ totalEntries }} 个条目
                 </span>
             </div>
             
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1 sm:gap-3">
                 <input type="file" id="file-upload" class="hidden" accept=".json" @change="importJson">
-                
-                <button @click="triggerUpload" title="导入已有json文件" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 font-medium">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    导入
-                </button>
-                
-                <button @click="confirmExportAll" title="导出当前列表中的全部条目" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 font-medium">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    导出
-                </button>
 
-                <button @click="confirmDeleteAll" title="清空全部条目缓存" class="px-3 py-1.5 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30 rounded-md transition-colors flex items-center gap-1.5 font-medium">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    清空
-                </button>
-                
-                <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                <!-- 文件下拉菜单 -->
+                <div class="relative">
+                    <button @click.stop="toggleFileMenu" title="文件菜单" class="px-2 sm:px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="hidden sm:inline">文件</span>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div v-if="fileMenuOpen" class="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1">
+                        <button @click="triggerUpload" class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            导入...
+                        </button>
+                        <button @click="confirmExportAll" class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            导出全部
+                        </button>
+                        <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+                        <button @click="confirmResetToBuiltIn" class="block w-full text-left px-4 py-2 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                            重置为内置版本
+                        </button>
+                    </div>
+                </div>
 
-                <button @click="openNewEntryModal" title="新建一个 XP 设定条目" class="px-4 py-1.5 text-sm bg-slate-800 text-white hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white rounded-md transition-colors shadow-sm flex items-center gap-1.5 font-medium">
+                <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-0.5 sm:mx-1"></div>
+
+                <button @click="openNewEntryModal" title="新建一个 XP 设定条目" class="px-2 sm:px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 font-medium">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    新建
+                    <span class="hidden sm:inline">新建</span>
                 </button>
-                
-                <button @click="toggleDarkMode" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-hover transition-colors text-slate-500 dark:text-slate-400 ml-1">
+
+                <button @click="toggleDarkMode" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-hover transition-colors text-slate-500 dark:text-slate-400 ml-0.5">
                     <svg v-if="isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
             </div>
         </header>
 
+        <!-- 版本更新横幅 -->
+        <div v-if="versionBanner.show" class="flex-none bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 px-4 py-2 flex items-center justify-between text-sm z-20">
+            <div class="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>检测到新版数据（{{ versionBanner.serverVersion }}），点击查看更新</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button @click="showVersionUpdateModal" class="text-blue-600 dark:text-blue-400 hover:underline font-medium text-xs">查看</button>
+                <button @click="dismissVersionBanner" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
         <!-- 主体内容区 -->
         <main class="flex-1 flex overflow-hidden relative">
-            <!-- 左侧列表 -->
-            <div class="w-80 flex-none flex flex-col border-r border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-panel relative">
-                <!-- 搜索与折叠控制 -->
-                <div class="p-3 border-b border-slate-200 dark:border-dark-border flex flex-col gap-3 bg-white/50 dark:bg-dark-panel/50 backdrop-blur-sm z-30">
-                    <div class="relative">
-                        <input v-model="searchQuery" type="text" placeholder="搜索设定..." class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-slate-900 border-transparent rounded-lg text-sm transition-all text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600">
-                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
-                    <div class="flex items-center justify-between px-1">
-                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide uppercase">目录索引</span>
-                        <button @click="toggleExpandAll" class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 transition-colors">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path v-if="isAllExpanded" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                            {{ isAllExpanded ? '全部折叠' : '全部展开' }}
-                        </button>
-                    </div>
-                </div>
+            <!-- 手机端遮罩 -->
+            <div v-if="sidebarOpen && !isPC" @click="toggleSidebar" class="absolute inset-0 bg-slate-900/30 z-30 md:hidden"></div>
 
-                <!-- 列表区域 -->
-                <div class="flex-1 overflow-y-auto pb-16 relative z-10">
-                    <div v-if="filteredGroupedEntries.length === 0" class="p-8 text-center text-slate-400 text-sm mt-10">
-                        <svg class="w-8 h-8 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        {{ entries.length === 0 ? '暂无数据，请导入' : '未找到匹配项' }}
+            <!-- 左侧列表（PC: flex 并列可折叠；手机: 绝对定位覆盖抽屉） -->
+            <aside class="bg-slate-50 dark:bg-dark-panel border-r border-slate-200 dark:border-dark-border flex flex-col z-40"
+                   :class="isPC
+                       ? (sidebarOpen ? 'w-80 sidebar-pc' : 'w-0 sidebar-pc overflow-hidden')
+                       : (sidebarOpen
+                           ? 'fixed inset-y-0 left-0 top-14 w-[280px] sidebar-mobile translate-x-0'
+                           : 'fixed inset-y-0 left-0 top-14 w-[280px] sidebar-mobile -translate-x-full')">
+                <!-- 内部固定宽度容器，避免收起时内容被挤压 -->
+                <div class="w-80 sm:w-80 h-full flex flex-col">
+                    <!-- 搜索与折叠控制 -->
+                    <div class="p-3 border-b border-slate-200 dark:border-dark-border flex flex-col gap-3 bg-white/50 dark:bg-dark-panel/50 backdrop-blur-sm z-30">
+                        <div class="relative">
+                            <input v-model="searchQuery" @keydown.enter="searchJumpOrFilter" type="text" placeholder="搜标题/正文，或输入编号如 K29 回车直达" class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-slate-900 border-transparent rounded-lg text-sm transition-all text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between px-1">
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide uppercase">目录索引</span>
+                            <button @click="toggleExpandAll" class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path v-if="isAllExpanded" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                    <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                                <span class="hidden sm:inline">{{ isAllExpanded ? '全部折叠' : '全部展开' }}</span>
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div v-for="group in filteredGroupedEntries" :key="group.letter">
-                        <div @click="toggleGroup(group.letter)" 
-                             class="category-header px-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                             :title="getCategoryDesc(group.letter)">
-                            <div class="flex items-center gap-2 overflow-hidden">
-                                <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 flex-shrink-0 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300" 
-                                     :class="{'rotate-90': !collapsedGroups[group.letter]}" 
-                                     fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate tracking-wide">
-                                    {{ group.letter }} - {{ getCategoryName(group.letter) }}
-                                </span>
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded flex-shrink-0">
-                                <template v-if="getSelectedCountInGroup(group.items) > 0">
-                                    <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(group.items) }}</span>/{{ group.items.length }}
-                                </template>
-                                <template v-else>
-                                    {{ group.items.length }}
-                                </template>
-                            </span>
+
+                    <!-- 列表区域 -->
+                    <div class="flex-1 overflow-y-auto pb-16 relative z-10">
+                        <div v-if="filteredGroupedEntries.length === 0" class="p-8 text-center text-slate-400 text-sm mt-10">
+                            <svg class="w-8 h-8 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            {{ entries.length === 0 ? '暂无数据，请导入' : '未找到匹配项' }}
                         </div>
                         
-                        <ul v-show="!collapsedGroups[group.letter]">
-                            <li v-for="item in group.items" :key="item.id" 
-                                class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
-                                :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
-                                
-                                <div class="pl-4 pr-2 py-3 flex items-center justify-center relative z-10">
-                                    <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
+                        <div v-for="group in filteredGroupedEntries" :key="group.letter">
+                            <div @click="toggleGroup(group.letter)" 
+                                 class="category-header px-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                                 :title="getCategoryDesc(group.letter)">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 flex-shrink-0 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300" 
+                                         :class="{'rotate-90': !collapsedGroups[group.letter]}" 
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate tracking-wide">
+                                        {{ group.letter }} - {{ getCategoryName(group.letter) }}
+                                    </span>
                                 </div>
-                                
-                                <div @click="selectEntry(item)" class="flex-1 py-3 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
-                                    <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
-                                        {{ item.title || '未命名条目' }}
-                                    </div>
-                                </div>
-                                
-                                <div v-if="selectedEntry && selectedEntry.id === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-800 dark:bg-slate-400 rounded-r z-10"></div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div v-if="filteredUncategorized.length > 0">
-                        <div @click="toggleGroup('#')" 
-                             class="category-header px-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                             title="未遵循分类命名格式的条目">
-                            <div class="flex items-center gap-2">
-                                <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300" 
-                                     :class="{'rotate-90': !collapsedGroups['#']}" 
-                                     fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-wide"># - 未分类</span>
+                                <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded flex-shrink-0">
+                                    <template v-if="getSelectedCountInGroup(group.items) > 0">
+                                        <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(group.items) }}</span>/{{ group.items.length }}
+                                    </template>
+                                    <template v-else>
+                                        {{ group.items.length }}
+                                    </template>
+                                </span>
                             </div>
-                            <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded">
-                                <template v-if="getSelectedCountInGroup(filteredUncategorized) > 0">
-                                    <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(filteredUncategorized) }}</span>/{{ filteredUncategorized.length }}
-                                </template>
-                                <template v-else>
-                                    {{ filteredUncategorized.length }}
-                                </template>
-                            </span>
-                        </div>
-                        <ul v-show="!collapsedGroups['#']">
-                            <li v-for="item in filteredUncategorized" :key="item.id" 
-                                class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
-                                :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
-                                <div class="pl-4 pr-2 py-3 flex items-center justify-center relative z-10">
-                                    <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
-                                </div>
-                                <div @click="selectEntry(item)" class="flex-1 py-3 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
-                                    <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
-                                        {{ item.title || '未命名条目' }}
+                            
+                            <ul v-show="!collapsedGroups[group.letter]">
+                                <li v-for="item in group.items" :key="item.id" 
+                                    class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
+                                    :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
+                                    <div class="pl-4 pr-2 py-3 flex items-center justify-center relative z-10">
+                                        <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
                                     </div>
-                                </div>
-                                <div v-if="selectedEntry && selectedEntry.id === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-800 dark:bg-slate-400 rounded-r z-10"></div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                                    <div @click="selectEntry(item)" class="flex-1 py-3 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
+                                        <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
+                                            {{ item.title || '未命名条目' }}
+                                        </div>
+                                    </div>
+                                    <div v-if="selectedEntry && selectedEntry.id === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-800 dark:bg-slate-400 rounded-r z-10"></div>
+                                </li>
+                            </ul>
+                        </div>
 
-                <!-- 侧边栏底部悬浮操作台 -->
-                <transition name="slide-up">
-                    <div v-if="selectedIds.length > 0" class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-slate-200 dark:border-slate-700 p-3 z-30">
-                        <div class="flex items-center justify-between mb-2 px-1">
-                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">已选中 {{ selectedIds.length }} 项</span>
-                            <button @click="clearSelection" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">清空</button>
-                        </div>
-                        <div class="flex gap-2">
-                            <button @click="exportSelected" class="flex-1 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 rounded transition-colors border border-slate-200 dark:border-slate-600">
-                                导出
-                            </button>
-                            <button @click="confirmDeleteSelected" class="flex-1 py-1.5 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded transition-colors border border-red-200 dark:border-red-800/50">
-                                删除
-                            </button>
+                        <div v-if="filteredUncategorized.length > 0">
+                            <div @click="toggleGroup('#')" 
+                                 class="category-header px-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                                 title="未遵循分类命名格式的条目">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300" 
+                                         :class="{'rotate-90': !collapsedGroups['#']}" 
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-wide"># - 未分类</span>
+                                </div>
+                                <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded">
+                                    <template v-if="getSelectedCountInGroup(filteredUncategorized) > 0">
+                                        <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(filteredUncategorized) }}</span>/{{ filteredUncategorized.length }}
+                                    </template>
+                                    <template v-else>
+                                        {{ filteredUncategorized.length }}
+                                    </template>
+                                </span>
+                            </div>
+                            <ul v-show="!collapsedGroups['#']">
+                                <li v-for="item in filteredUncategorized" :key="item.id" 
+                                    class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
+                                    :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
+                                    <div class="pl-4 pr-2 py-3 flex items-center justify-center relative z-10">
+                                        <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
+                                    </div>
+                                    <div @click="selectEntry(item)" class="flex-1 py-3 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
+                                        <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
+                                            {{ item.title || '未命名条目' }}
+                                        </div>
+                                    </div>
+                                    <div v-if="selectedEntry && selectedEntry.id === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-800 dark:bg-slate-400 rounded-r z-10"></div>
+                                </li>
+                            </ul>
                         </div>
                     </div>
-                </transition>
-            </div>
+
+                    <!-- 侧边栏底部悬浮操作台 -->
+                    <transition name="slide-up">
+                        <div v-if="selectedIds.length > 0" class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-slate-200 dark:border-slate-700 p-3 z-30">
+                            <div class="flex items-center justify-between mb-2 px-1">
+                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">已选中 {{ selectedIds.length }} 项</span>
+                                <button @click="clearSelection" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">清空</button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="confirmExportSelected" class="flex-1 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 rounded transition-colors border border-slate-200 dark:border-slate-600">
+                                    导出
+                                </button>
+                                <button @click="confirmDeleteSelected" class="flex-1 py-1.5 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded transition-colors border border-red-200 dark:border-red-800/50">
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    </transition>
+                </div>
+            </aside>
 
             <!-- 右侧沉浸式编辑区 -->
-            <div class="flex-1 flex flex-col bg-white dark:bg-[#0b1120] relative">
+            <div ref="editorArea" class="flex-1 flex flex-col bg-white dark:bg-[#0b1120] relative overflow-hidden">
                 <div v-if="!selectedEntry" class="absolute inset-0 flex items-center justify-center flex-col gap-5">
                     <svg class="w-12 h-12 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <p class="text-slate-400 dark:text-slate-500 text-sm tracking-wide">在左侧选择设定进行编辑，或创建新条目</p>
                 </div>
                 
-                <div v-else class="flex-1 flex flex-col h-full py-10 px-8 lg:px-16 xl:px-24 overflow-y-auto max-w-5xl mx-auto w-full group/editor">
+                <div v-else class="flex-1 flex flex-col h-full py-6 sm:py-10 px-5 sm:px-8 lg:px-16 xl:px-24 overflow-y-auto max-w-5xl mx-auto w-full group/editor">
                     
                     <div class="mb-4 flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs px-2 py-1 rounded font-medium tracking-wide">
-                                当前选中编辑项
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span v-if="selectedEntryCategoryLetter" class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs px-2 py-1 rounded font-medium tracking-wide">
+                                {{ selectedEntryCategoryLetter }} · {{ getCategoryName(selectedEntryCategoryLetter) }}
+                            </span>
+                            <span v-else class="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs px-2 py-1 rounded font-medium tracking-wide">
+                                未分类
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-500">|</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400 font-mono truncate" style="max-width: 200px">
+                                {{ selectedEntry ? selectedEntry.title : '' }}
                             </span>
                         </div>
-                        <button @click="confirmDeleteEntry(selectedEntry)" class="px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-600 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded transition-colors border border-red-100 dark:border-red-900/30">
+                        <button @click="confirmDeleteEntry(selectedEntry)" title="删除当前条目" class="px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-600 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded transition-colors border border-red-100 dark:border-red-900/30">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            永久删除
+                            删除
                         </button>
                     </div>
 
-                    <input v-model="selectedEntry.title" type="text" class="w-full text-3xl lg:text-4xl font-bold bg-transparent border-0 px-0 py-2 mb-6 text-slate-900 dark:text-white focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="输入标题，例如：A1 - 现实世界">
+                    <input v-model="selectedEntry.title" type="text" class="w-full text-2xl sm:text-3xl lg:text-4xl font-bold bg-transparent border-0 px-0 py-2 mb-6 text-slate-900 dark:text-white focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="输入标题，例如：A1 - 现实世界">
 
                     <textarea v-model="selectedEntry.content" class="flex-1 w-full resize-none bg-transparent border-0 px-0 py-2 text-base lg:text-lg leading-relaxed text-slate-700 dark:text-slate-300 font-mono focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="开始编写设定正文..."></textarea>
                 </div>
@@ -317,7 +362,7 @@
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2" :class="modal.isDanger ? 'text-red-600 dark:text-red-400' : ''">
                         {{ modal.title }}
                     </h3>
-                    <p class="text-sm text-slate-600 dark:text-slate-300">
+                    <p class="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line">
                         {{ modal.message }}
                     </p>
                 </div>
@@ -334,41 +379,61 @@
         </div>
 
         <!-- 新建条目 Modal -->
-        <div v-if="showNewModal" class="fixed inset-0 bg-slate-900/40 dark:bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+        <div v-if="showNewModal" class="fixed inset-0 bg-slate-900/40 dark:bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center sm:p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-full sm:max-w-lg h-full sm:h-auto border-0 sm:border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all flex flex-col">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center flex-shrink-0">
                     <h3 class="text-base font-semibold text-slate-900 dark:text-white">新建XP条目</h3>
                     <button @click="showNewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 
-                <div class="p-6 flex flex-col gap-5">
+                <div class="p-6 flex flex-col gap-5 flex-1 overflow-y-auto">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择分类基准</label>
-                        <select v-model="newEntryCategory" @change="generateNewTitle" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 transition-shadow">
-                            <option value="">-- 手动自定义 (无分类约束) --</option>
-                            <option v-for="(info, letter) in CATEGORIES" :key="letter" :value="letter">
-                                {{ letter }} - {{ info.name }}
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">一级分类</label>
+                        <select v-model="newEntryPrimary" @change="onPrimaryChange" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 transition-shadow">
+                            <option value="">-- 请选择一级分类 --</option>
+                            <option v-for="(cat, idx) in PRIMARY_CATEGORIES" :key="idx" :value="idx">
+                                {{ cat.name }}
                             </option>
                         </select>
-                        <p v-if="newEntryCategory" class="text-xs text-slate-500 mt-2 pl-1 flex items-start gap-1">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">二级类别</label>
+                        <select v-model="newEntrySecondary" @change="generateNewTitle" :disabled="newEntryPrimary === ''" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed">
+                            <option value="">-- 请选择二级类别 --</option>
+                            <option v-for="letter in availableSecondaryLetters" :key="letter" :value="letter">
+                                {{ letter }} - {{ getCategoryName(letter) }}
+                            </option>
+                        </select>
+                        <p v-if="newEntrySecondary" class="text-xs text-slate-500 mt-2 pl-1 flex items-start gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0 mt-0.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>{{ CATEGORIES[newEntryCategory]?.desc }}</span>
+                            <span>{{ CATEGORIES[newEntrySecondary]?.desc }}</span>
                         </p>
                     </div>
 
+                    <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">自动生成编号</label>
+                        <div class="text-lg font-mono font-bold text-slate-800 dark:text-slate-100">{{ newEntrySecondary && newEntryNextNum ? (newEntrySecondary + newEntryNextNum) : '--' }}</div>
+                    </div>
+
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">条目标题</label>
-                        <input v-model="newEntryTitle" ref="newTitleInput" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 transition-shadow" placeholder="如：A1 - 现实世界">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">条目名称</label>
+                        <input v-model="newEntryName" @input="updatePreview" ref="newTitleInput" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 transition-shadow" placeholder="如：现实世界的镜像">
+                    </div>
+
+                    <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/30 rounded p-2 flex items-center gap-2">
+                        <span>预览：</span>
+                        <span class="font-mono font-medium text-slate-700 dark:text-slate-200">{{ newEntrySecondary && newEntryNextNum ? (newEntrySecondary + newEntryNextNum + ' - ' + (newEntryName || '未命名')) : '请先完成分类选择' }}</span>
                     </div>
                 </div>
 
-                <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/50">
+                <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/50 flex-shrink-0">
                     <button @click="showNewModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
                         取消
                     </button>
-                    <button @click="confirmNewEntry" class="px-5 py-2 text-sm font-medium bg-slate-800 text-white hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white rounded-lg transition-colors shadow-sm">
+                    <button @click="confirmNewEntry" :disabled="!canCreateNew" class="px-5 py-2 text-sm font-medium bg-slate-800 text-white hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         创建
                     </button>
                 </div>
@@ -376,13 +441,14 @@
         </div>
         
         <!-- Toast 提示 -->
-        <div v-if="toast.show" class="fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-xl text-sm font-medium transition-all duration-300 z-50 flex items-center gap-2.5" :class="toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900'">
+        <div v-if="toast.show" class="fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-xl text-sm font-medium transition-all duration-300 z-50 flex items-center gap-2.5" :class="toast.type === 'error' ? 'bg-red-500 text-white' : (toast.type === 'warning' ? 'bg-amber-500 text-white' : 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900')">
             <svg v-if="toast.type === 'error'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg v-else-if="toast.type === 'warning'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
             {{ toast.message }}
         </div>
 
-    </div> <!-- 这个是 Vue 根节点 #app 的正确闭合位置 -->
+    </div>
 
     <script>
         const FIXED_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
@@ -416,6 +482,20 @@
             "Z": { "name": "重口-猎奇", "desc": "肢解、死亡、食人、极端反常识和伦理元素" }
         };
 
+        // 一级分类 → 二级类别字母 映射
+        const PRIMARY_CATEGORIES = [
+            { name: '世界观', letters: ['A', 'B', 'C'] },
+            { name: '角色',   letters: ['D', 'E', 'F', 'G', 'H', 'I'] },
+            { name: '恋物',   letters: ['J', 'K', 'L', 'M'] },
+            { name: '剧情',   letters: ['N', 'O', 'P', 'Q', 'R', 'S'] },
+            { name: 'SM',     letters: ['T', 'U', 'V'] },
+            { name: '重口',   letters: ['W', 'X', 'Y', 'Z'] }
+        ];
+
+        const STORAGE_KEY = 'xp_entries';
+        const VERSION_KEY = 'xp_last_reset_version';
+        const ENTRIES_URL = './entries.json';
+
         const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
 
         createApp({
@@ -424,7 +504,11 @@
                 const entries = ref([]);
                 const selectedEntry = ref(null);
                 const searchQuery = ref('');
-                
+                const editorArea = ref(null);
+
+                const sidebarOpen = ref(false);
+                const isPC = ref(false);
+
                 const selectedIds = ref([]);
                 const collapsedGroups = ref({}); 
                 
@@ -438,59 +522,172 @@
                 });
 
                 const showNewModal = ref(false);
-                const newEntryCategory = ref('');
-                const newEntryTitle = ref('');
+                const newEntryPrimary = ref('');
+                const newEntrySecondary = ref('');
+                const newEntryName = ref('');
+                const newEntryNextNum = ref('');
                 const newTitleInput = ref(null);
+
+                const versionBanner = ref({ show: false, serverVersion: '' });
+
+                // 文件菜单下拉
+                const fileMenuOpen = ref(false);
+                const toggleFileMenu = () => { fileMenuOpen.value = !fileMenuOpen.value; };
 
                 const toast = ref({ show: false, message: '', type: 'success' });
                 let toastTimer = null;
 
-                // 统一的 ID 生成器：时间戳 + 随机后缀，避免连续创建时碰撞
                 const genId = () => Date.now().toString() + Math.random().toString(36).slice(2, 7);
 
-                // 数据持久化：失败时静默降级，绝不阻断已有流程
-                const STORAGE_KEY = 'xp_entries';
+                const showToast = (message, type = 'success') => {
+                    toast.value = { show: true, message, type };
+                    if (toastTimer) clearTimeout(toastTimer);
+                    toastTimer = setTimeout(() => {
+                        toast.value.show = false;
+                    }, 3000);
+                };
+
+                // 兼容旧版 ST 格式 → 新数组格式
+                const stEntriesToArray = (stEntries) => {
+                    const result = [];
+                    for (const key in stEntries) {
+                        if (stEntries.hasOwnProperty(key)) {
+                            const item = stEntries[key];
+                            result.push({
+                                id: genId(),
+                                title: item.comment || key || '',
+                                content: item.content || ''
+                            });
+                        }
+                    }
+                    return result;
+                };
+
+                // 从数组数据生成 entries
+                const arrayTo内部 = (arr) => arr.map(item => ({
+                    id: item.id || genId(),
+                    title: item.title || '',
+                    content: item.content || ''
+                }));
+
+                // 持久化
                 const saveEntries = () => {
                     try {
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.value.map(e => ({ id: e.id, title: e.title, content: e.content }))));
                     } catch (err) {
-                        console.warn('数据持久化失败（可能超出配额），请及时导出备份', err);
+                        console.warn('localStorage 保存失败', err);
+                        if (err && err.name === 'QuotaExceededError') {
+                            showToast('本地保存失败，请立即导出 JSON 备份', 'error');
+                        }
                     }
                 };
+
                 const loadEntries = () => {
                     try {
                         const raw = localStorage.getItem(STORAGE_KEY);
-                        if (!raw) return;
-                        const data = JSON.parse(raw);
-                        if (Array.isArray(data)) {
-                            entries.value = data.map(item => ({
-                                id: item.id || genId(),
-                                title: item.title || '',
-                                content: item.content || ''
-                            }));
+                        if (raw) {
+                            const arr = JSON.parse(raw);
+                            if (Array.isArray(arr)) {
+                                entries.value = arrayTo内部(arr);
+                                return Promise.resolve(true);
+                            }
                         }
                     } catch (err) {
-                        console.warn('本地缓存读取失败，已忽略', err);
+                        console.warn('localStorage 读取失败', err);
                     }
+                    // fallback to fetch
+                    return fetch(ENTRIES_URL)
+                        .then(r => {
+                            if (!r.ok) throw new Error('HTTP ' + r.status);
+                            return r.json();
+                        })
+                        .then(json => {
+                            const arr = json.entries || json;
+                            entries.value = arrayTo内部(arr);
+                            if (json.version) {
+                                localStorage.setItem(VERSION_KEY, json.version);
+                            }
+                            return true;
+                        })
+                        .catch(err => {
+                            console.warn('fetch entries.json 失败', err);
+                            showToast('内置数据加载失败，请导入 JSON 文件', 'error');
+                            return false;
+                        });
+                };
+
+                // fetch 内置 json，用于版本对比 + 重置
+                const fetchBuiltIn = async () => {
+                    const r = await fetch(ENTRIES_URL + '?t=' + Date.now());
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                };
+
+                // 检查内置版本 vs 本地版本
+                const checkVersion = async () => {
+                    try {
+                        const json = await fetchBuiltIn();
+                        const serverVersion = json.version;
+                        if (!serverVersion) return;
+                        const localVersion = localStorage.getItem(VERSION_KEY) || '';
+                        if (serverVersion !== localVersion) {
+                            versionBanner.value = { show: true, serverVersion };
+                        }
+                    } catch (err) {
+                        // 静默失败，不影响用户
+                    }
+                };
+
+                const dismissVersionBanner = () => {
+                    versionBanner.value.show = false;
+                };
+
+                const showVersionUpdateModal = () => {
+                    const serverVer = versionBanner.value.serverVersion;
+                    const localVer = localStorage.getItem(VERSION_KEY) || '(未知)';
+                    openModal({
+                        title: '检测到新版数据',
+                        message: `服务器版本：${serverVer}\n本地版本：${localVer}\n\n重置将放弃所有本地修改并加载项目内置最新版本，此操作不可撤销。是否继续？`,
+                        isDanger: true,
+                        confirmText: '确认重置',
+                        onConfirm: () => doReset()
+                    });
                 };
 
                 const CATEGORIES = CATEGORY_DATA;
 
-                onMounted(() => {
+                onMounted(async () => {
+                    // 主题
                     const savedTheme = localStorage.getItem('theme');
                     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                         isDark.value = true;
                         document.documentElement.classList.add('dark');
                     }
-                    // 恢复上次会话数据；为空时保持原"导入即用"语义
-                    loadEntries();
+
+                    isPC.value = window.innerWidth >= 768;
+                    sidebarOpen.value = isPC.value;
+
+                    window.addEventListener('resize', () => {
+                        const newIsPC = window.innerWidth >= 768;
+                        if (newIsPC !== isPC.value) {
+                            isPC.value = newIsPC;
+                            // 切换到 PC 模式自动展开，切回手机收起
+                            sidebarOpen.value = newIsPC;
+                        }
+                    });
+
+                    await loadEntries();
+
                     if (entries.value.length > 0) {
                         selectedEntry.value = entries.value[0];
                     }
                     collapseAll();
+
+                    // 版本检查（后台低优先级）
+                    checkVersion();
                 });
 
-                // 监听条目变化，自动持久化（深度监听以捕获标题/正文编辑）
+                // 监听条目变化自动持久化
                 watch(entries, saveEntries, { deep: true });
 
                 const toggleDarkMode = () => {
@@ -502,14 +699,6 @@
                         document.documentElement.classList.remove('dark');
                         localStorage.setItem('theme', 'light');
                     }
-                };
-
-                const showToast = (message, type = 'success') => {
-                    toast.value = { show: true, message, type };
-                    if (toastTimer) clearTimeout(toastTimer);
-                    toastTimer = setTimeout(() => {
-                        toast.value.show = false;
-                    }, 3000);
                 };
 
                 const openModal = (options) => {
@@ -531,6 +720,13 @@
                 };
 
                 const totalEntries = computed(() => entries.value.length);
+
+                // 选中条目所属分类字母
+                const selectedEntryCategoryLetter = computed(() => {
+                    if (!selectedEntry.value || !selectedEntry.value.title) return '';
+                    const m = selectedEntry.value.title.match(/^([A-Za-z])\d+\s*-?/);
+                    return m ? m[1].toUpperCase() : '';
+                });
 
                 const filteredEntries = computed(() => {
                     if (!searchQuery.value) return entries.value;
@@ -590,6 +786,10 @@
                 const filteredGroupedEntries = computed(() => groupedAndSortedData.value.grouped);
                 const filteredUncategorized = computed(() => groupedAndSortedData.value.uncategorized);
 
+                const toggleSidebar = () => {
+                    sidebarOpen.value = !sidebarOpen.value;
+                };
+
                 const toggleGroup = (letter) => {
                     collapsedGroups.value[letter] = !collapsedGroups.value[letter];
                 };
@@ -626,7 +826,9 @@
                 };
 
                 const getCategoryName = (letter) => {
-                    return CATEGORIES[letter] ? CATEGORIES[letter].name : '未知分类';
+                    if (!CATEGORIES[letter]) return '未知分类';
+                    const fullName = CATEGORIES[letter].name;
+                    return fullName.split('-')[1] || fullName;
                 };
 
                 const getCategoryDesc = (letter) => {
@@ -637,56 +839,61 @@
                     return items.filter(item => selectedIds.value.includes(item.id)).length;
                 };
 
+                // === 导入 JSON ===
                 const triggerUpload = () => {
+                    fileMenuOpen.value = false;
                     document.getElementById('file-upload').click();
                 };
 
                 const importJson = (event) => {
                     const file = event.target.files[0];
                     if (!file) return;
-
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         try {
-                            const rawData = e.target.result;
-                            const json = JSON.parse(rawData);
+                            const json = JSON.parse(e.target.result);
                             let parsedEntries = [];
 
                             if (json && typeof json === 'object' && json.entries && !Array.isArray(json)) {
-                                const stEntries = json.entries;
-                                for (const key in stEntries) {
-                                    if (stEntries.hasOwnProperty(key)) {
-                                        const item = stEntries[key];
-                                        parsedEntries.push({
-                                            id: genId(),
-                                            title: item.comment || '',
-                                            content: item.content || ''
-                                        });
-                                    }
-                                }
+                                // 旧版 SillyTavern 格式
+                                parsedEntries = stEntriesToArray(json.entries);
                                 showToast(`成功转换并导入了 ${parsedEntries.length} 个旧版条目`);
-                            } 
-                            else if (Array.isArray(json)) {
-                                parsedEntries = json.map(item => ({
-                                    id: item.id || genId(),
-                                    title: item.title || '',
-                                    content: item.content || ''
-                                }));
+                            } else if (json && typeof json === 'object' && json.entries && Array.isArray(json.entries)) {
+                                // 内置 entries.json 包装格式
+                                parsedEntries = arrayTo内部(json.entries);
+                                if (json.version) localStorage.setItem(VERSION_KEY, json.version);
+                                showToast(`成功导入 ${parsedEntries.length} 个条目`);
+                            } else if (Array.isArray(json)) {
+                                // 纯数组格式
+                                parsedEntries = arrayTo内部(json);
                                 showToast(`成功导入 ${parsedEntries.length} 个条目`);
                             } else {
                                 throw new Error("不支持的 JSON 格式");
                             }
 
-                            entries.value = parsedEntries;
-                            selectedIds.value = [];
+                            const proceedImport = () => {
+                                entries.value = parsedEntries;
+                                selectedIds.value = [];
+                                if (entries.value.length > 0) {
+                                    selectedEntry.value = entries.value[0];
+                                } else {
+                                    selectedEntry.value = null;
+                                }
+                                collapseAll();
+                                showToast(`已导入 ${parsedEntries.length} 个条目`);
+                            };
+
                             if (entries.value.length > 0) {
-                                selectedEntry.value = entries.value[0];
+                                openModal({
+                                    title: '确认导入',
+                                    message: `导入将覆盖当前 ${entries.value.length} 个条目，此操作不可撤销。确认继续？`,
+                                    isDanger: true,
+                                    confirmText: '确认导入',
+                                    onConfirm: proceedImport
+                                });
                             } else {
-                                selectedEntry.value = null;
+                                proceedImport();
                             }
-                            
-                            collapseAll();
-                            event.target.value = '';
                         } catch (err) {
                             console.error(err);
                             showToast('JSON 解析失败或格式不正确', 'error');
@@ -696,8 +903,44 @@
                         showToast('读取文件发生错误', 'error');
                     };
                     reader.readAsText(file, 'UTF-8');
+                    event.target.value = '';
                 };
 
+                // === 重置为内置版本 ===
+                const confirmResetToBuiltIn = () => {
+                    openModal({
+                        title: '危险操作：重置为内置版本',
+                        message: '这将放弃当前所有本地编辑的数据，并从项目内置数据中重新加载最新版本。\n\n此操作不可撤销，未导出的修改将永久丢失。确认继续？',
+                        isDanger: true,
+                        confirmText: '我已确认，重置',
+                        onConfirm: () => doReset()
+                    });
+                };
+
+                const doReset = async () => {
+                    try {
+                        const json = await fetchBuiltIn();
+                        const arr = json.entries || json;
+                        entries.value = arrayTo内部(arr);
+                        if (json.version) {
+                            localStorage.setItem(VERSION_KEY, json.version);
+                        }
+                        selectedIds.value = [];
+                        if (entries.value.length > 0) {
+                            selectedEntry.value = entries.value[0];
+                        } else {
+                            selectedEntry.value = null;
+                        }
+                        collapseAll();
+                        versionBanner.value.show = false;
+                        showToast(`已重置为内置版本（${json.version || ''}），加载 ${entries.value.length} 条`);
+                    } catch (err) {
+                        console.error(err);
+                        showToast('重置失败：无法获取内置数据', 'error');
+                    }
+                };
+
+                // === 导出 ===
                 const executeExport = (dataToExport, filenamePrefix) => {
                     if (dataToExport.length === 0) {
                         showToast('没有可导出的数据', 'error');
@@ -727,7 +970,7 @@
                     }
                     openModal({
                         title: '导出全部数据',
-                        message: `您将导出当前列表中的全部 ${entries.value.length} 个条目。导出文件可用于备份或分享。确认继续？`,
+                        message: `将导出全部 ${entries.value.length} 个条目为 JSON，可直接导入墨韵 XP World 模组使用。确认导出？`,
                         confirmText: '确认导出',
                         onConfirm: () => {
                             executeExport(entries.value, 'XP大世界_全量');
@@ -735,56 +978,66 @@
                     });
                 };
 
-                const exportSelected = () => {
-                    const toExport = entries.value.filter(e => selectedIds.value.includes(e.id));
-                    executeExport(toExport, 'XP大世界_选中导出');
-                };
-
-                const confirmDeleteAll = () => {
-                    if (entries.value.length === 0) {
-                        showToast('当前没有数据需要清空', 'error');
-                        return;
-                    }
+                const confirmExportSelected = () => {
+                    const count = selectedIds.value.length;
+                    if (count === 0) return;
                     openModal({
-                        title: '危险操作：清空全部条目',
-                        message: `您将清空浏览器中当前加载的所有 ${entries.value.length} 个条目！此操作不可恢复，未导出的数据将永久丢失。您确定要继续吗？`,
-                        isDanger: true,
-                        confirmText: '我已确认，全部清空',
+                        title: '导出选中条目',
+                        message: `将导出选中的 ${count} 个条目为 JSON，可直接导入墨韵 XP World 模组使用。确认导出？`,
+                        confirmText: '确认导出',
                         onConfirm: () => {
-                            entries.value = [];
-                            selectedEntry.value = null;
-                            selectedIds.value = [];
-                            showToast('已清空所有数据');
+                            const toExport = entries.value.filter(e => selectedIds.value.includes(e.id));
+                            executeExport(toExport, 'XP大世界_选中导出');
                         }
                     });
                 };
 
                 const selectEntry = (entry) => {
                     selectedEntry.value = entry;
+                    // 编辑区滚到顶
+                    nextTick(() => {
+                        if (editorArea.value) {
+                            const scrollEl = editorArea.value.querySelector('.overflow-y-auto');
+                            if (scrollEl) scrollEl.scrollTop = 0;
+                        }
+                    });
+                    // 手机端选中条目 300ms 后自动收起侧边栏
+                    if (!isPC.value && sidebarOpen.value) {
+                        setTimeout(() => {
+                            sidebarOpen.value = false;
+                        }, 300);
+                    }
                 };
 
                 const clearSelection = () => {
                     selectedIds.value = [];
                 };
 
-                const openNewEntryModal = () => {
-                    newEntryCategory.value = '';
-                    newEntryTitle.value = '';
-                    showNewModal.value = true;
-                    nextTick(() => {
-                        if (newTitleInput.value) newTitleInput.value.focus();
-                    });
+                // === 新建条目 ===
+                const availableSecondaryLetters = computed(() => {
+                    if (newEntryPrimary.value === '' || newEntryPrimary.value === null) return [];
+                    return PRIMARY_CATEGORIES[newEntryPrimary.value].letters;
+                });
+
+                const canCreateNew = computed(() => {
+                    return newEntryPrimary.value !== '' && 
+                           newEntrySecondary.value !== '' && 
+                           newEntryName.value.trim() !== '';
+                });
+
+                const onPrimaryChange = () => {
+                    newEntrySecondary.value = '';
+                    newEntryNextNum.value = '';
+                    generateNewTitle();
                 };
 
                 const generateNewTitle = () => {
-                    if (!newEntryCategory.value) {
-                        newEntryTitle.value = '';
+                    if (!newEntrySecondary.value) {
+                        newEntryNextNum.value = '';
                         return;
                     }
-                    
-                    const letter = newEntryCategory.value;
+                    const letter = newEntrySecondary.value;
                     let maxNum = 0;
-                    
                     const regex = new RegExp(`^${letter}(\\d+)`);
                     entries.value.forEach(e => {
                         if (e.title) {
@@ -795,18 +1048,35 @@
                             }
                         }
                     });
-                    
-                    const nextNum = maxNum + 1;
-                    const catName = CATEGORIES[letter].name.split('-')[1];
-                    newEntryTitle.value = `${letter}${nextNum} - 自定义${catName}`;
+                    newEntryNextNum.value = maxNum + 1;
+                };
+
+                const updatePreview = () => {
+                    // 触发响应式即可，预览由 computed 渲染
+                };
+
+                const openNewEntryModal = () => {
+                    newEntryPrimary.value = '';
+                    newEntrySecondary.value = '';
+                    newEntryName.value = '';
+                    newEntryNextNum.value = '';
+                    showNewModal.value = true;
+                    nextTick(() => {
+                        if (newTitleInput.value) newTitleInput.value.focus();
+                    });
                 };
 
                 const confirmNewEntry = () => {
-                    const finalTitle = newEntryTitle.value.trim() || '未命名新条目';
+                    if (!canCreateNew.value) return;
+                    const letter = newEntrySecondary.value;
+                    const num = newEntryNextNum.value;
+                    const name = newEntryName.value.trim();
+                    const finalTitle = `${letter}${num} - ${name}`;
+                    
                     const newEntry = {
                         id: genId(),
                         title: finalTitle,
-                        content: `<${finalTitle.split(' - ')[1] || finalTitle}>\n**AI注意：现在必须主动通过相关剧情引入并描绘以下内容**\n\nDescription: ...\n\nEffect: ...\n\nDynamic: ...\n\nApplication: ...\n</${finalTitle.split(' - ')[1] || finalTitle}>`
+                        content: ''
                     };
                     
                     entries.value.unshift(newEntry);
@@ -816,8 +1086,7 @@
                     if (match) {
                         const L = match[1].toUpperCase();
                         collapsedGroups.value[L] = false;
-                    } else {
-                        collapsedGroups.value['#'] = false;
+                        if (!isPC.value) sidebarOpen.value = false;
                     }
 
                     showNewModal.value = false;
@@ -829,7 +1098,7 @@
                     if (!entry) return;
                     openModal({
                         title: '删除条目',
-                        message: `您确定要永久删除条目 "${entry.title}" 吗？此操作无法撤销。`,
+                        message: `您确定要删除条目 "${entry.title}" 吗？此操作无法撤销。`,
                         isDanger: true,
                         confirmText: '确认删除',
                         onConfirm: () => {
@@ -839,7 +1108,6 @@
                                 selectedIds.value = selectedIds.value.filter(id => id !== entry.id);
 
                                 if (entries.value.length > 0) {
-                                    // 优先停留在视觉相邻的上一项，越界则回退到首项
                                     selectedEntry.value = entries.value[index - 1] || entries.value[0];
                                 } else {
                                     selectedEntry.value = null;
@@ -856,7 +1124,7 @@
                     
                     openModal({
                         title: '批量删除确认',
-                        message: `警告：您即将永久删除选中的 ${count} 个条目。此操作无法撤销，确认继续吗？`,
+                        message: `警告：您即将删除选中的 ${count} 个条目。此操作无法撤销，确认继续吗？`,
                         isDanger: true,
                         confirmText: '确认批量删除',
                         onConfirm: () => {
@@ -872,10 +1140,35 @@
                     });
                 };
 
+                // === 搜索：编号直达 ===
+                const searchJumpOrFilter = () => {
+                    const q = searchQuery.value.trim().toUpperCase();
+                    const codeRegex = /^[A-Z]\d+$/;
+                    if (codeRegex.test(q)) {
+                        const found = entries.value.find(e => e.title && e.title.startsWith(q + ' '));
+                        if (found) {
+                            selectedEntry.value = found;
+                            // 展开对应分组
+                            const letter = q[0];
+                            collapsedGroups.value[letter] = false;
+                            if (!isPC.value) {
+                                setTimeout(() => { sidebarOpen.value = false; }, 300);
+                            }
+                            showToast(`已跳转到 ${q}`);
+                        } else {
+                            showToast(`未找到编号 ${q} 的条目`, 'error');
+                        }
+                    }
+                    // 非编号输入：现有 filter 行为已生效，无需额外动作
+                };
+
                 return {
                     isDark,
+                    isPC,
+                    sidebarOpen,
                     entries,
                     selectedEntry,
+                    editorArea,
                     searchQuery,
                     toast,
                     totalEntries,
@@ -883,6 +1176,7 @@
                     filteredUncategorized,
                     
                     CATEGORIES,
+                    PRIMARY_CATEGORIES,
                     collapsedGroups,
                     selectedIds,
                     
@@ -890,9 +1184,17 @@
                     closeModal,
 
                     showNewModal,
-                    newEntryCategory,
-                    newEntryTitle,
+                    newEntryPrimary,
+                    newEntrySecondary,
+                    newEntryName,
+                    newEntryNextNum,
                     newTitleInput,
+                    availableSecondaryLetters,
+                    canCreateNew,
+                    
+                    versionBanner,
+                    dismissVersionBanner,
+                    showVersionUpdateModal,
 
                     isAllExpanded,
 
@@ -900,11 +1202,15 @@
                     getCategoryDesc,
                     getSelectedCountInGroup,
                     toggleDarkMode,
+                    toggleSidebar,
+                    fileMenuOpen,
+                    toggleFileMenu,
                     triggerUpload,
                     importJson,
+                    selectedEntryCategoryLetter,
+                    confirmResetToBuiltIn,
                     confirmExportAll,
-                    exportSelected,
-                    confirmDeleteAll,
+                    confirmExportSelected,
                     selectEntry,
                     clearSelection,
                     
@@ -912,11 +1218,15 @@
                     toggleExpandAll,
                     
                     openNewEntryModal,
+                    onPrimaryChange,
                     generateNewTitle,
+                    updatePreview,
                     confirmNewEntry,
                     
                     confirmDeleteEntry,
-                    confirmDeleteSelected
+                    confirmDeleteSelected,
+
+                    searchJumpOrFilter
                 };
             }
         }).mount('#app');

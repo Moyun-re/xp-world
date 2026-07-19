@@ -6,12 +6,12 @@
 
 ## 1. 概览
 
-- **项目**：XP World v1.0
+- **项目**：XP World v1.1（数据格式：`title` / `human` / `ai`）
 - **入口**：`index.html`（项目根目录，非 `src/`）
 - **类型**：纯前端单文件应用
 - **技术栈**：Vue 3 Composition API · Tailwind CSS CDN · localStorage · Blob/FileReader API
 - **无构建工具**：不依赖 Node.js / npm / 任何打包器
-- **运行**：浏览器直接打开（须通过 HTTP 服务，`file://` 下 `fetch('./entries.json')` 会失败）
+- **运行**：须通过 HTTP 服务（`file://` 下 `fetch('./entries.json')` 会失败）
 
 ---
 
@@ -20,7 +20,7 @@
 ```
 XP World/
 ├── index.html       # 应用主程序（唯一改动文件）
-├── entries.json     # 内置预设数据
+├── entries.json     # 内置：{ version, entries: [{title, human, ai}] }
 ├── README.md
 └── DEVELOPMENT.md
 ```
@@ -41,34 +41,39 @@ XP World/
 
 ```
 #app
-├── header                顶部导航（汉堡 + 标题 + 版本 + 文件菜单 + 新建 + 暗色）
-├── version banner        版本更新提醒（条件渲染）
+├── header                汉堡 + 标题 + 版本 + 文件菜单 + 新建 + 暗色
+├── version banner        新版本提醒（条件渲染）
 ├── main
-│   ├── 遮罩              手机端侧边栏展开时可见
-│   ├── aside             左侧目录（PC flex / 手机覆盖抽屉）
-│   │   ├── 搜索 + 编号直达
-│   │   ├── 分类分组（一级 -> 二级）
-│   │   └── 底部批量操作悬浮栏
-│   └── div               右侧编辑区（分类徽标 + 删除按钮 + 标题 + 正文）
-├── Modal                 全局危险确认
-├── New Entry Modal       新建条目
-└── Toast                 提示
+│   ├── 遮罩              手机侧边栏展开时
+│   ├── aside             三级目录 + 搜索 + 批量栏
+│   └── editor            标题 + 词条说明(human) + 预注入提示词(ai)
+├── Modal                 全局确认
+├── New Entry Modal       新建
+└── Toast
 ```
 
 ### 关键行为
 
 | 区域 | 行为 |
 |---|---|
-| 侧边栏（PC ≥768px） | flex 并列，宽度 320px，可收起 |
-| 侧边栏（手机 <768px） | 绝对定位覆盖抽屉，宽度 280px，编辑区宽度不受影响 |
-| 选中条目 | 手机端 300ms 后自动收起侧边栏，PC 端保持展开 |
-| 搜索框 | 模糊匹配标题/正文；输入如 `K29` 按回车 → 直达编号 |
-| 新建 Modal | 强制选择一级 + 二级分类才可创建 |
-| 文件菜单 | 顶部"文件"按钮下拉：导入… / 导出全部 / 重置为内置版本 |
-| 导出全部 | 二次确认 Modal，导出 JSON 可直接导入墨韵 XP World 模组 |
-| 导出选中 | 同上确认逻辑 |
-| 删除（单条/批量） | 都走危险 Modal 确认 |
-| 重置 | fetch 最新 entries.json 覆盖 localStorage，危险 Modal |
+| 侧边栏 PC | flex，宽 320px，可收起 |
+| 侧边栏手机 | 覆盖抽屉，编辑区宽度不受挤 |
+| 三级目录 | 一级 `PRIMARY_CATEGORIES`（6）→ 二级 A–Z → 条目；一级/二级可独立折叠 |
+| 搜索 | 匹配 `title` / `human` / `ai`；`K29` 回车编号直达 |
+| 新建 | 一级 + 二级字母必选；`human`/`ai` 初始为空串 |
+| 编辑区 | 标签：**词条说明**（`human`）、**预注入提示词**（`ai`）；两框透明底、同风格 |
+| 文件菜单 | 导入… / **导出维护数据**（全量）/ 重置为内置版本 |
+| 批量栏 | **提示词导出**（选中）+ 删除；**无**维护导出 |
+| 危险操作 | 导入覆盖、删除、重置 → `openModal` |
+
+### 界面文案 ↔ 字段
+
+| 界面 | 字段 | 说明 |
+|------|------|------|
+| 词条说明 | `human` | 给人看 |
+| 预注入提示词 | `ai` | 给 AI / 提示词导出 |
+| 导出维护数据 | 全量 `title+human+ai` | 右上角文件菜单 |
+| 提示词导出 | 选中 `title+content`（content=`ai`） | 底部批量栏 |
 
 ---
 
@@ -77,7 +82,7 @@ XP World/
 | 区域 | z-index |
 |---|---|
 | 顶部导航 | 30 |
-| 分类 sticky 头 | 20 |
+| 分类 sticky 头 | 20–21 |
 | 底部批量操作栏 | 30 |
 | 手机端侧边栏 | 40 |
 | 手机端遮罩 | 30 |
@@ -85,7 +90,7 @@ XP World/
 | 全局确认 Modal | 60 |
 | Toast | 50 |
 
-不要随意调整，确认 / 新建 Modal 必须在所有内容之上。
+确认 / 新建 Modal 必须在所有内容之上。
 
 ---
 
@@ -94,14 +99,14 @@ XP World/
 ### 内部条目
 ```js
 [
-  { id: '...', title: 'A1 - 现实世界', content: '...' }
+  { id: '...', title: 'A1 - 现实世界', human: '...', ai: '...' }
 ]
 ```
 
-### 分类映射（常量）
+### 分类常量
 ```js
-const FIXED_LETTERS = ['A', ..., 'Z'];
-const CATEGORY_DATA = { "A": { "name": "世界观-世界", "desc": "..." }, ... };
+const FIXED_LETTERS = ['A', /* ... */, 'Z'];
+const CATEGORY_DATA = { "A": { "name": "世界观-世界", "desc": "..." }, /* ... */ };
 const PRIMARY_CATEGORIES = [
   { name: '世界观', letters: ['A', 'B', 'C'] },
   { name: '角色',   letters: ['D', 'E', 'F', 'G', 'H', 'I'] },
@@ -112,73 +117,73 @@ const PRIMARY_CATEGORIES = [
 ];
 ```
 
-侧边栏分组、新建 Modal 二级下拉均来自 `PRIMARY_CATEGORIES`。`getCategoryName()` 返回二级名（如 "世界"，去掉一级前缀）。
+侧边栏由 `primaryTree` 计算：`PRIMARY_CATEGORIES` × `groupedAndSortedData`。  
+`getCategoryName(letter)` 返回二级短名（去掉一级前缀）。
 
 ### 标题分类规则
 ```js
 /^([A-Za-z])\d+\s*-?/
 ```
-不匹配的条目归入 `# 未分类`。
+不匹配 → `# 未分类`。
 
-### ID 生成
+### ID
 ```js
 const genId = () => Date.now().toString() + Math.random().toString(36).slice(2, 7);
 ```
-必须用此函数（纯时间戳连续创建会撞 ID）。
 
 ---
 
 ## 7. 数据加载与持久化
 
-### 加载流程（`loadEntries()`）
-1. 读 `localStorage.xp_entries`，有数据 → 用之
-2. 无数据 → `fetch('./entries.json')`，装入并写入 `xp_last_reset_version`
-3. fetch 失败 → entries 置空 + toast 报错
+### `loadEntries()`
+1. `localStorage.xp_entries`
+   - 合法新格式 → 用之
+   - 整表为旧 `title/content` → 清空 + toast，再走内置
+2. 否则 `fetch('./entries.json')`，写入 `xp_last_reset_version`
+3. 失败 → 空 + toast
 
 ### 持久化
 ```js
 watch(entries, saveEntries, { deep: true });
+// 存：id, title, human, ai
 ```
-- `deep: true` 必须（v-model 直接改对象字段）
-- 保存失败抛 `QuotaExceededError` 时 toast 提示导出备份
+`QuotaExceededError` 时 toast 提示先做维护导出备份。
 
-### 版本检查
-```js
-onMounted(() => { loadEntries(); checkVersion(); });
-```
-`checkVersion()` 带时间戳参数 fetch 内置 json 比对 `version`，不一致则顶部横幅提醒，点查看 → 危险 Modal → 用户确认 → 走 `doReset()`。
-
-### 重置
-```js
-fetchBuiltIn() → entries.value = arrayTo内部(arr) → 更新 localStorage + VERSION_KEY
-```
-重置 = 完全覆盖本地数据，不可撤销。
+### 版本 / 重置
+- `checkVersion()` 比对内置 `version` 与本地 `VERSION_KEY`
+- `doReset()`：`arrayToEntries` 覆盖本地，更新版本，关横幅
 
 ---
 
-## 8. 导入逻辑
+## 8. 导入
 
-### 支持格式
-1. **纯数组** `[{title, content}]`
-2. **内置包装** `{ "version": "...", "entries": [...] }`
-3. **旧版 SillyTavern** `{ "entries": { "0": { comment, content } } }`
+### 支持
+1. `[{ title, human, ai }]`
+2. `{ version, entries: [{ title, human, ai }] }`（可写 `VERSION_KEY`）
 
-### 覆盖保护
-- 当前已有数据 → 弹危险 Modal 确认
-- 当前空 → 直接覆盖
+### 拒绝
+- SillyTavern `entries` 对象 map（已删除）
+- 旧 `[{ title, content }]` 主格式
 
-不支持合并导入（合并需处理 ID/标题去重，未实现）。
+有现网数据时 Modal 覆盖确认。不支持合并导入。
 
 ---
 
-## 9. 导出逻辑
+## 9. 导出
 
 ```js
-executeExport(dataToExport, filenamePrefix)
+executeExport(dataToExport, filenamePrefix, mode)
+// mode: 'maintain' | 'ai'
 ```
-- 导出格式：`[{title, content}]`，不含 `id`
-- 文件名：`XP大世界_全量_YYYY-MM-DD.json` 或 `XP大世界_选中导出_YYYY-MM-DD.json`
-- UTF-8 BOM 头，可直接被墨韵模组识别
+
+| 入口 | mode | 形状 | 文件名前缀 |
+|------|------|------|------------|
+| 文件 → 导出维护数据 | `maintain` | 全量 `[{ title, human, ai }]` | `XP大世界_维护全量_` |
+| 批量 → 提示词导出 | `ai` | 选中 `[{ title, content }]`，`content` = `ai` | `XP大世界_提示词选中_` |
+
+- 不含运行时 `id`
+- UTF-8 BOM
+- 弹窗文案面向小白，避免堆 JSON 术语
 
 ---
 
@@ -187,62 +192,117 @@ executeExport(dataToExport, filenamePrefix)
 | 改动 | 风险 |
 |---|---|
 | `#app` 根节点 | Modal/Toast 出去会编译失败 |
-| z-index | Modal 必须永远在内容之上 |
-| `STORAGE_KEY = 'xp_entries'` | 改 key 老用户丢数据，须写迁移 |
-| `genId` | 改纯时间戳会撞 key |
-| 删除操作 | 须同步维护 `entries / selectedEntry / selectedIds` |
+| z-index | Modal 须在最上层 |
+| `STORAGE_KEY = 'xp_entries'` | 改 key 须迁移 |
+| `genId` | 纯时间戳会撞 ID |
+| 删除 | 同步 `entries / selectedEntry / selectedIds` |
 | `watch` 去掉 `deep:true` | 编辑不保存 |
-| `entries.json` 路径 | 必须与 `index.html` 同目录，GitHub Pages 需要一起部署 |
+| `entries.json` 路径 | 与 `index.html` 同目录部署 |
+| 主库字段 | 勿再把 `content` 写回主库；`content` 仅出现在提示词导出 |
 
 ---
 
 ## 11. 测试清单
 
-每次改动后过一遍：
-
-- [ ] `python -m http.server 8000` 下首次加载（清 localStorage）
-- [ ] 有 localStorage 时优先用本地数据
-- [ ] 侧边栏手机抽屉遮罩 click 能关
-- [ ] 文件菜单点外部自动关闭
-- [ ] 导入旧版 JSON 会弹覆盖确认
-- [ ] 新建未选全分类时创建按钮 disabled
-- [ ] 删除单条 / 批量都有 Modal
-- [ ] 导出全部 / 导出选中都有 Modal
-- [ ] 搜索 K29 回车直达，未匹配有提示
-- [ ] 暗色模式切换 + 刷新保持
-- [ ] 编辑后刷新数据仍在
-- [ ] 新版推送后版本横幅出现 + 重置流程正常
+- [ ] HTTP 下清 localStorage 首次加载 → 内置条数与 version 正确
+- [ ] 合法本地数据优先；旧 content localStorage 提示后回落
+- [ ] 三级目录：一级展开后见 A–Z，再展开见条目
+- [ ] 编辑区可见「词条说明」「预注入提示词」，样式一致，刷新仍在
+- [ ] 导入维护数组 / 带 version 包装成功
+- [ ] 导入旧 ST / 旧 content 失败且有提示
+- [ ] 导出维护数据：全量 title+human+ai
+- [ ] 提示词导出：仅选中，title+content，content===ai
+- [ ] 文件菜单无「全量提示词导出」；批量栏无维护导出
+- [ ] 编号直达、删除 Modal、重置、版本横幅、暗色
 
 ---
 
-## 12. AI 接手 Prompt
+## 12. 内置数据同步工作流（维护 JSON → entries.json）
+
+优化版维护文件（如仓库根目录 `XP大世界_优化版_ABC.json`）**不会**在编辑后自动进入前端。  
+同步内置必须走脚本，且 **默认 dry-run，只有 `--apply` 才写盘**。
+
+### 原则
+
+| 规则 | 说明 |
+|------|------|
+| 源格式 | `[{ title, human, ai }]` 或 `{ version, entries: [...] }` |
+| 目标 | `XP World/entries.json` → `{ version, entries: [{title,human,ai}] }` |
+| 默认 | 只校验 + diff 预览，**不修改任何文件** |
+| 写入 | 必须显式 `--apply` |
+| version | 每次正式发布内置应 bump，便于用户端版本横幅 |
+| 文档 | 可选 `--update-docs` 替换 README/DEVELOPMENT 中的旧 version 字符串 |
+| AI/人工 | **禁止**在未获用户明确同意时执行 `--apply` |
+
+### 脚本
 
 ```
-你在维护 XP World v1.0。
-纯前端单文件 HTML 项目，入口 index.html，技术栈 Vue 3 + Tailwind CDN + localStorage。
-内置预设数据在 entries.json（带 version 字段）。
-不要大面积重构，不要破坏 #app 根节点 / Modal / Toast / z-index / 暗色模式。
-危险操作统一走 openModal，禁用 window.confirm。
-修改后跑测试清单（见 DEVELOPMENT.md §11）。
+XP World/scripts/sync_builtin_entries.py
+```
+
+### 命令（在仓库根目录）
+
+```bash
+# 1) 仅预览（应先跑）
+python "XP World/scripts/sync_builtin_entries.py" \
+  --source "XP大世界_优化版_ABC.json" \
+  --version "2026-07-20-abc"
+
+# 2) 用户确认 diff 后，再写入
+python "XP World/scripts/sync_builtin_entries.py" \
+  --source "XP大世界_优化版_ABC.json" \
+  --version "2026-07-20-abc" \
+  --apply
+
+# 3) 写入并同步文档中的 version 字样
+python "XP World/scripts/sync_builtin_entries.py" \
+  --source "XP大世界_优化版_ABC.json" \
+  --version "2026-07-20-abc" \
+  --apply --update-docs
+```
+
+### 发布后用户侧
+
+- 已有 localStorage 的用户：靠 `version` 横幅，或「重置为内置版本」
+- 开发预览：清 `xp_entries` / 重置后刷新
+
+### 后续扩类（如 ABCD）
+
+- 源文件换成新的优化版合并 JSON 即可，流程相同
+- 建议 version 体现范围，例如 `2026-08-01-abcd`
+
+---
+
+## 13. AI 接手 Prompt
+
+```
+你在维护 XP World v1.1。
+纯前端单文件 HTML，入口 index.html，Vue 3 + Tailwind CDN + localStorage。
+内置 entries.json：{ version, entries: [{title, human, ai}] }。
+运行时：{ id, title, human, ai }。
+界面：词条说明=human，预注入提示词=ai；侧边栏三级（6 一级→A-Z→条目）。
+导出：右上角仅维护全量 title/human/ai；批量栏「提示词导出」选中 title/content(content=ai)。
+同步内置数据：只用 XP World/scripts/sync_builtin_entries.py；默认 dry-run；
+未获用户明确同意禁止 --apply。见 DEVELOPMENT.md §12。
+危险操作走 openModal。已删 SillyTavern 与旧 content 正式导入。
+改后跑 DEVELOPMENT.md §11。
 ```
 
 ---
 
-## 13. 历史变更记录
+## 14. 历史变更
+
+### v1.1（2026-07-19）— 主数据 human/ai + 三级目录 + 导出收口
+- 主字段：`title` / `human` / `ai`；内置由优化版 ABC 维护文件经同步脚本生成
+- 删除 SillyTavern 导入；拒绝旧 content 主格式正式导入
+- 维护导出：右上角全量；提示词导出：批量选中 only
+- 编辑区双字段，标签「词条说明」「预注入提示词」
+- 侧边栏真正三级：`PRIMARY_CATEGORIES` → 字母 → 条目
+- 旧 localStorage content 检测后清空提示，不静默迁移
+- 新增 `scripts/sync_builtin_entries.py`：维护 JSON → 内置 entries 的 dry-run / --apply 工作流
 
 ### v1.0（2026-07-19）
-- 数据体系重构：26 类三级目录（一级分组 → A-Z → 条目），全部连续编号
-- 内置预设：`entries.json` 带 version，与 index.html 同目录部署
-- 加载三级回退：localStorage 优先 → fetch entries.json → 空 + 报错
-- 版本管理：版本不一致时顶部横幅提醒 + 确认 Modal 重置
-- 顶部 UI：`文件` 下拉菜单（导入/导出全部/重置为内置版本）+ 新建 + 暗色
-- 新建条目：两级下拉（一级分类 -> 二级 A-Z），自动编号，只填名称
-- 手机端：侧边栏改为覆盖抽屉，编辑区宽度不受影响；选中条目 300ms 后自动收起
-- 搜索：输入编号（如 K29）按回车直达
-- 危险确认：所有导入覆盖、删除、重置均走自定义 Modal
-- `content` 初始为空，不再注入旧版 ST 酒馆四段模板
-- 旧版 ST 格式导入 fallback：`comment || key`
+- 26 类体系、version 内置、文件菜单、新建两级、手机抽屉、编号直达、自定义 Modal
 
-### v0.9（2026-06-20，原作者 crazyWq）
-- 初版：纯前端工具，A-Z 二级分类，localStorage 持久化
-- 旧版 ST 格式导入 + 数组格式导出
+### v0.9（2026-06-20，crazyWq）
+- 初版 A–Z + localStorage；ST 导入 + 数组导出

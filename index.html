@@ -134,12 +134,12 @@
                         <span class="hidden sm:inline">文件</span>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div v-if="fileMenuOpen" class="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1">
+                    <div v-if="fileMenuOpen" class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1">
                         <button @click="triggerUpload" class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                             导入...
                         </button>
                         <button @click="confirmExportAll" class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                            导出全部
+                            导出维护数据
                         </button>
                         <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                         <button @click="confirmResetToBuiltIn" class="block w-full text-left px-4 py-2 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
@@ -211,63 +211,83 @@
                         </div>
                     </div>
 
-                    <!-- 列表区域 -->
+                    <!-- 列表区域：一级(6) → 二级(A-Z) → 条目 -->
                     <div class="flex-1 overflow-y-auto pb-16 relative z-10">
-                        <div v-if="filteredGroupedEntries.length === 0" class="p-8 text-center text-slate-400 text-sm mt-10">
+                        <div v-if="primaryTree.length === 0 && filteredUncategorized.length === 0" class="p-8 text-center text-slate-400 text-sm mt-10">
                             <svg class="w-8 h-8 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                             {{ entries.length === 0 ? '暂无数据，请导入' : '未找到匹配项' }}
                         </div>
-                        
-                        <div v-for="group in filteredGroupedEntries" :key="group.letter">
-                            <div @click="toggleGroup(group.letter)" 
-                                 class="category-header px-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                                 :title="getCategoryDesc(group.letter)">
+
+                        <div v-for="primary in primaryTree" :key="primary.name">
+                            <!-- 一级分类 -->
+                            <div @click="togglePrimary(primary.name)"
+                                 class="category-header px-3 py-2.5 bg-slate-200/90 dark:bg-slate-900/90 border-y border-slate-300/40 dark:border-slate-700/60 flex justify-between items-center cursor-pointer hover:bg-slate-300/80 dark:hover:bg-slate-800 transition-colors group/primary sticky top-0 z-[21]">
                                 <div class="flex items-center gap-2 overflow-hidden">
-                                    <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 flex-shrink-0 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300" 
-                                         :class="{'rotate-90': !collapsedGroups[group.letter]}" 
+                                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 flex-shrink-0"
+                                         :class="{'rotate-90': !collapsedPrimaries[primary.name]}"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate tracking-wide">
-                                        {{ group.letter }} - {{ getCategoryName(group.letter) }}
-                                    </span>
+                                    <span class="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-wide">{{ primary.name }}</span>
                                 </div>
-                                <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded flex-shrink-0">
-                                    <template v-if="getSelectedCountInGroup(group.items) > 0">
-                                        <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(group.items) }}</span>/{{ group.items.length }}
-                                    </template>
-                                    <template v-else>
-                                        {{ group.items.length }}
-                                    </template>
+                                <span class="text-[10px] font-medium text-slate-600 dark:text-slate-400 px-1.5 py-0.5 bg-white/70 dark:bg-slate-800/80 rounded flex-shrink-0">
+                                    {{ primary.count }}
                                 </span>
                             </div>
-                            
-                            <ul v-show="!collapsedGroups[group.letter]">
-                                <li v-for="item in group.items" :key="item.id" 
-                                    class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
-                                    :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
-                                    <div class="pl-4 pr-2 py-3 flex items-center justify-center relative z-10">
-                                        <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
-                                    </div>
-                                    <div @click="selectEntry(item)" class="flex-1 py-3 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
-                                        <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
-                                            {{ item.title || '未命名条目' }}
+
+                            <!-- 二级 A-Z -->
+                            <div v-show="!collapsedPrimaries[primary.name]">
+                                <div v-for="group in primary.groups" :key="primary.name + '-' + group.letter">
+                                    <div @click="toggleGroup(group.letter)"
+                                         class="category-header pl-6 pr-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header"
+                                         :title="getCategoryDesc(group.letter)">
+                                        <div class="flex items-center gap-2 overflow-hidden">
+                                            <svg class="w-3 h-3 text-slate-400 dark:text-slate-500 transition-transform duration-200 flex-shrink-0"
+                                                 :class="{'rotate-90': !collapsedGroups[group.letter]}"
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate tracking-wide">
+                                                {{ group.letter }} - {{ getCategoryName(group.letter) }}
+                                            </span>
                                         </div>
+                                        <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded flex-shrink-0">
+                                            <template v-if="getSelectedCountInGroup(group.items) > 0">
+                                                <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(group.items) }}</span>/{{ group.items.length }}
+                                            </template>
+                                            <template v-else>
+                                                {{ group.items.length }}
+                                            </template>
+                                        </span>
                                     </div>
-                                    <div v-if="selectedEntry && selectedEntry.id === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-800 dark:bg-slate-400 rounded-r z-10"></div>
-                                </li>
-                            </ul>
+
+                                    <!-- 三级条目 -->
+                                    <ul v-show="!collapsedGroups[group.letter]">
+                                        <li v-for="item in group.items" :key="item.id"
+                                            class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
+                                            :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
+                                            <div class="pl-8 pr-2 py-2.5 flex items-center justify-center relative z-10">
+                                                <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
+                                            </div>
+                                            <div @click="selectEntry(item)" class="flex-1 py-2.5 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
+                                                <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
+                                                    {{ item.title || '未命名条目' }}
+                                                </div>
+                                            </div>
+                                            <div v-if="selectedEntry && selectedEntry.id === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-800 dark:bg-slate-400 rounded-r z-10"></div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
                         <div v-if="filteredUncategorized.length > 0">
-                            <div @click="toggleGroup('#')" 
-                                 class="category-header px-4 py-2 bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-200/90 dark:hover:bg-slate-700/90 transition-colors group/header shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                            <div @click="toggleGroup('#')"
+                                 class="category-header px-3 py-2.5 bg-slate-200/90 dark:bg-slate-900/90 border-y border-slate-300/40 dark:border-slate-700/60 flex justify-between items-center cursor-pointer hover:bg-slate-300/80 dark:hover:bg-slate-800 transition-colors sticky top-0 z-[21]"
                                  title="未遵循分类命名格式的条目">
                                 <div class="flex items-center gap-2">
-                                    <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300" 
-                                         :class="{'rotate-90': !collapsedGroups['#']}" 
+                                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200"
+                                         :class="{'rotate-90': !collapsedGroups['#']}"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-wide"># - 未分类</span>
+                                    <span class="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-wide"># 未分类</span>
                                 </div>
-                                <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400 px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-900/60 rounded">
+                                <span class="text-[10px] font-medium text-slate-600 dark:text-slate-400 px-1.5 py-0.5 bg-white/70 dark:bg-slate-800/80 rounded">
                                     <template v-if="getSelectedCountInGroup(filteredUncategorized) > 0">
                                         <span class="text-blue-500 dark:text-blue-400">{{ getSelectedCountInGroup(filteredUncategorized) }}</span>/{{ filteredUncategorized.length }}
                                     </template>
@@ -277,13 +297,13 @@
                                 </span>
                             </div>
                             <ul v-show="!collapsedGroups['#']">
-                                <li v-for="item in filteredUncategorized" :key="item.id" 
+                                <li v-for="item in filteredUncategorized" :key="item.id"
                                     class="group flex items-stretch border-b border-slate-100 dark:border-slate-800/50 transition-colors relative"
                                     :class="[selectedEntry && selectedEntry.id === item.id ? 'bg-white dark:bg-slate-800/80 shadow-sm z-0' : 'hover:bg-white/60 dark:hover:bg-slate-800/40 z-0']">
-                                    <div class="pl-4 pr-2 py-3 flex items-center justify-center relative z-10">
+                                    <div class="pl-6 pr-2 py-2.5 flex items-center justify-center relative z-10">
                                         <input type="checkbox" :value="item.id" v-model="selectedIds" class="custom-checkbox relative z-20">
                                     </div>
-                                    <div @click="selectEntry(item)" class="flex-1 py-3 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
+                                    <div @click="selectEntry(item)" class="flex-1 py-2.5 pr-4 cursor-pointer min-w-0 flex items-center relative z-10">
                                         <div class="text-xs truncate" :class="selectedEntry && selectedEntry.id === item.id ? 'text-slate-900 dark:text-slate-100 font-semibold' : 'text-slate-600 dark:text-slate-400 font-medium'">
                                             {{ item.title || '未命名条目' }}
                                         </div>
@@ -294,7 +314,7 @@
                         </div>
                     </div>
 
-                    <!-- 侧边栏底部悬浮操作台 -->
+                    <!-- 侧边栏底部悬浮操作台：仅 AI 导出 + 删除 -->
                     <transition name="slide-up">
                         <div v-if="selectedIds.length > 0" class="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-slate-200 dark:border-slate-700 p-3 z-30">
                             <div class="flex items-center justify-between mb-2 px-1">
@@ -302,8 +322,8 @@
                                 <button @click="clearSelection" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">清空</button>
                             </div>
                             <div class="flex gap-2">
-                                <button @click="confirmExportSelected" class="flex-1 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 rounded transition-colors border border-slate-200 dark:border-slate-600">
-                                    导出
+                                <button @click="confirmExportAiSelected" class="flex-1 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 rounded transition-colors border border-slate-200 dark:border-slate-600">
+                                    提示词导出
                                 </button>
                                 <button @click="confirmDeleteSelected" class="flex-1 py-1.5 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded transition-colors border border-red-200 dark:border-red-800/50">
                                     删除
@@ -342,9 +362,21 @@
                         </button>
                     </div>
 
-                    <input v-model="selectedEntry.title" type="text" class="w-full text-2xl sm:text-3xl lg:text-4xl font-bold bg-transparent border-0 px-0 py-2 mb-6 text-slate-900 dark:text-white focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="输入标题，例如：A1 - 现实世界">
+                    <input v-model="selectedEntry.title" type="text" class="w-full text-2xl sm:text-3xl lg:text-4xl font-bold bg-transparent border-0 px-0 py-2 mb-5 text-slate-900 dark:text-white focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="输入标题，例如：A1 - 现实世界">
 
-                    <textarea v-model="selectedEntry.content" class="flex-1 w-full resize-none bg-transparent border-0 px-0 py-2 text-base lg:text-lg leading-relaxed text-slate-700 dark:text-slate-300 font-mono focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="开始编写设定正文..."></textarea>
+                    <div class="mb-6">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-medium text-slate-400 dark:text-slate-500">词条说明</span>
+                        </div>
+                        <textarea v-model="selectedEntry.human" rows="3" class="w-full resize-none bg-transparent border-0 px-0 py-2 text-base lg:text-lg leading-relaxed text-slate-700 dark:text-slate-300 font-mono focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="用一两句话说明这条设定适合什么场景..."></textarea>
+                    </div>
+
+                    <div class="flex-1 flex flex-col min-h-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-medium text-slate-400 dark:text-slate-500">预注入提示词</span>
+                        </div>
+                        <textarea v-model="selectedEntry.ai" class="flex-1 w-full min-h-[12rem] resize-none bg-transparent border-0 px-0 py-2 text-base lg:text-lg leading-relaxed text-slate-700 dark:text-slate-300 font-mono focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors" placeholder="编写将注入 AI 的提示词正文..."></textarea>
+                    </div>
                 </div>
 
                 <div class="absolute bottom-3 right-5 text-[10px] text-slate-400/60 dark:text-slate-500/50 hover:text-slate-500 dark:hover:text-slate-400 transition-colors pointer-events-none">
@@ -510,7 +542,8 @@
                 const isPC = ref(false);
 
                 const selectedIds = ref([]);
-                const collapsedGroups = ref({}); 
+                const collapsedGroups = ref({});
+                const collapsedPrimaries = ref({}); 
                 
                 const modal = ref({
                     show: false,
@@ -547,33 +580,32 @@
                     }, 3000);
                 };
 
-                // 兼容旧版 ST 格式 → 新数组格式
-                const stEntriesToArray = (stEntries) => {
-                    const result = [];
-                    for (const key in stEntries) {
-                        if (stEntries.hasOwnProperty(key)) {
-                            const item = stEntries[key];
-                            result.push({
-                                id: genId(),
-                                title: item.comment || key || '',
-                                content: item.content || ''
-                            });
-                        }
-                    }
-                    return result;
+                // 是否为旧版 title/content 主格式（无 human/ai）
+                const isLegacyContentEntry = (item) => {
+                    if (!item || typeof item !== 'object') return false;
+                    const hasContent = Object.prototype.hasOwnProperty.call(item, 'content');
+                    const hasHuman = Object.prototype.hasOwnProperty.call(item, 'human');
+                    const hasAi = Object.prototype.hasOwnProperty.call(item, 'ai');
+                    return hasContent && !hasHuman && !hasAi;
                 };
 
-                // 从数组数据生成 entries
-                const arrayTo内部 = (arr) => arr.map(item => ({
+                // 从数组数据生成内部 entries：{ id, title, human, ai }
+                const arrayToEntries = (arr) => (Array.isArray(arr) ? arr : []).map(item => ({
                     id: item.id || genId(),
                     title: item.title || '',
-                    content: item.content || ''
+                    human: item.human || '',
+                    ai: item.ai || ''
                 }));
 
                 // 持久化
                 const saveEntries = () => {
                     try {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.value.map(e => ({ id: e.id, title: e.title, content: e.content }))));
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.value.map(e => ({
+                            id: e.id,
+                            title: e.title,
+                            human: e.human || '',
+                            ai: e.ai || ''
+                        }))));
                     } catch (err) {
                         console.warn('localStorage 保存失败', err);
                         if (err && err.name === 'QuotaExceededError') {
@@ -588,8 +620,13 @@
                         if (raw) {
                             const arr = JSON.parse(raw);
                             if (Array.isArray(arr)) {
-                                entries.value = arrayTo内部(arr);
-                                return Promise.resolve(true);
+                                if (arr.length > 0 && arr.every(isLegacyContentEntry)) {
+                                    localStorage.removeItem(STORAGE_KEY);
+                                    showToast('本地数据为旧版 content 格式，已清空。请重置为内置版本或导入 human/ai JSON', 'error');
+                                } else {
+                                    entries.value = arrayToEntries(arr);
+                                    return Promise.resolve(true);
+                                }
                             }
                         }
                     } catch (err) {
@@ -603,7 +640,7 @@
                         })
                         .then(json => {
                             const arr = json.entries || json;
-                            entries.value = arrayTo内部(arr);
+                            entries.value = arrayToEntries(arr);
                             if (json.version) {
                                 localStorage.setItem(VERSION_KEY, json.version);
                             }
@@ -733,7 +770,8 @@
                     const q = searchQuery.value.toLowerCase();
                     return entries.value.filter(item => 
                         (item.title && item.title.toLowerCase().includes(q)) || 
-                        (item.content && item.content.toLowerCase().includes(q))
+                        (item.human && item.human.toLowerCase().includes(q)) ||
+                        (item.ai && item.ai.toLowerCase().includes(q))
                     );
                 });
 
@@ -783,11 +821,32 @@
                     };
                 });
 
-                const filteredGroupedEntries = computed(() => groupedAndSortedData.value.grouped);
+                const letterToGroup = computed(() => {
+                    const map = {};
+                    groupedAndSortedData.value.grouped.forEach(g => { map[g.letter] = g; });
+                    return map;
+                });
+
+                // 三级目录：一级(PRIMARY) → 二级(A-Z) → 条目
+                const primaryTree = computed(() => {
+                    const map = letterToGroup.value;
+                    return PRIMARY_CATEGORIES.map(p => {
+                        const groups = p.letters
+                            .map(letter => map[letter])
+                            .filter(Boolean);
+                        const count = groups.reduce((n, g) => n + g.items.length, 0);
+                        return { name: p.name, groups, count };
+                    }).filter(p => p.count > 0);
+                });
+
                 const filteredUncategorized = computed(() => groupedAndSortedData.value.uncategorized);
 
                 const toggleSidebar = () => {
                     sidebarOpen.value = !sidebarOpen.value;
+                };
+
+                const togglePrimary = (name) => {
+                    collapsedPrimaries.value[name] = !collapsedPrimaries.value[name];
                 };
 
                 const toggleGroup = (letter) => {
@@ -795,26 +854,27 @@
                 };
 
                 const expandAll = () => {
-                    FIXED_LETTERS.forEach(l => collapsedGroups.value[l] = false);
+                    PRIMARY_CATEGORIES.forEach(p => { collapsedPrimaries.value[p.name] = false; });
+                    FIXED_LETTERS.forEach(l => { collapsedGroups.value[l] = false; });
                     collapsedGroups.value['#'] = false;
                 };
 
                 const collapseAll = () => {
-                    FIXED_LETTERS.forEach(l => collapsedGroups.value[l] = true);
+                    PRIMARY_CATEGORIES.forEach(p => { collapsedPrimaries.value[p.name] = true; });
+                    FIXED_LETTERS.forEach(l => { collapsedGroups.value[l] = true; });
                     collapsedGroups.value['#'] = true;
                 };
 
                 const isAllExpanded = computed(() => {
-                    let anyCollapsed = false;
-                    FIXED_LETTERS.forEach(l => {
-                        if (groupedAndSortedData.value.grouped.some(g => g.letter === l) && collapsedGroups.value[l]) {
-                            anyCollapsed = true;
+                    // 有可见内容且任一级/二级折叠 → 视为未全部展开
+                    for (const p of primaryTree.value) {
+                        if (collapsedPrimaries.value[p.name]) return false;
+                        for (const g of p.groups) {
+                            if (collapsedGroups.value[g.letter]) return false;
                         }
-                    });
-                    if (groupedAndSortedData.value.uncategorized.length > 0 && collapsedGroups.value['#']) {
-                        anyCollapsed = true;
                     }
-                    return !anyCollapsed;
+                    if (filteredUncategorized.value.length > 0 && collapsedGroups.value['#']) return false;
+                    return true;
                 });
 
                 const toggleExpandAll = () => {
@@ -852,28 +912,30 @@
                     reader.onload = (e) => {
                         try {
                             const json = JSON.parse(e.target.result);
-                            let parsedEntries = [];
+                            let sourceArr = null;
+                            let importedVersion = null;
 
-                            if (json && typeof json === 'object' && json.entries && !Array.isArray(json)) {
-                                // 旧版 SillyTavern 格式
-                                parsedEntries = stEntriesToArray(json.entries);
-                                showToast(`成功转换并导入了 ${parsedEntries.length} 个旧版条目`);
-                            } else if (json && typeof json === 'object' && json.entries && Array.isArray(json.entries)) {
-                                // 内置 entries.json 包装格式
-                                parsedEntries = arrayTo内部(json.entries);
-                                if (json.version) localStorage.setItem(VERSION_KEY, json.version);
-                                showToast(`成功导入 ${parsedEntries.length} 个条目`);
+                            if (json && typeof json === 'object' && !Array.isArray(json) && Array.isArray(json.entries)) {
+                                // 内置包装：{ version, entries: [{title, human, ai}] }
+                                sourceArr = json.entries;
+                                if (json.version) importedVersion = json.version;
                             } else if (Array.isArray(json)) {
-                                // 纯数组格式
-                                parsedEntries = arrayTo内部(json);
-                                showToast(`成功导入 ${parsedEntries.length} 个条目`);
+                                // 维护交换：[{ title, human, ai }]
+                                sourceArr = json;
                             } else {
-                                throw new Error("不支持的 JSON 格式");
+                                throw new Error('不支持的 JSON 格式：请使用 [{title, human, ai}] 或 { version, entries }');
                             }
+
+                            if (sourceArr.length > 0 && sourceArr.every(isLegacyContentEntry)) {
+                                throw new Error('检测到旧版 title/content 格式，请导入 title/human/ai 数据');
+                            }
+
+                            const parsedEntries = arrayToEntries(sourceArr);
 
                             const proceedImport = () => {
                                 entries.value = parsedEntries;
                                 selectedIds.value = [];
+                                if (importedVersion) localStorage.setItem(VERSION_KEY, importedVersion);
                                 if (entries.value.length > 0) {
                                     selectedEntry.value = entries.value[0];
                                 } else {
@@ -896,7 +958,7 @@
                             }
                         } catch (err) {
                             console.error(err);
-                            showToast('JSON 解析失败或格式不正确', 'error');
+                            showToast(err && err.message ? err.message : 'JSON 解析失败或格式不正确', 'error');
                         }
                     };
                     reader.onerror = () => {
@@ -908,6 +970,7 @@
 
                 // === 重置为内置版本 ===
                 const confirmResetToBuiltIn = () => {
+                    fileMenuOpen.value = false;
                     openModal({
                         title: '危险操作：重置为内置版本',
                         message: '这将放弃当前所有本地编辑的数据，并从项目内置数据中重新加载最新版本。\n\n此操作不可撤销，未导出的修改将永久丢失。确认继续？',
@@ -921,7 +984,7 @@
                     try {
                         const json = await fetchBuiltIn();
                         const arr = json.entries || json;
-                        entries.value = arrayTo内部(arr);
+                        entries.value = arrayToEntries(arr);
                         if (json.version) {
                             localStorage.setItem(VERSION_KEY, json.version);
                         }
@@ -941,15 +1004,22 @@
                 };
 
                 // === 导出 ===
-                const executeExport = (dataToExport, filenamePrefix) => {
+                // mode: 'maintain' → [{title, human, ai}]；'ai' → [{title, content: ai}]
+                const executeExport = (dataToExport, filenamePrefix, mode = 'maintain') => {
                     if (dataToExport.length === 0) {
                         showToast('没有可导出的数据', 'error');
                         return;
                     }
-                    const exportData = dataToExport.map(item => ({
-                        title: item.title,
-                        content: item.content
-                    }));
+                    const exportData = mode === 'ai'
+                        ? dataToExport.map(item => ({
+                            title: item.title,
+                            content: item.ai || ''
+                        }))
+                        : dataToExport.map(item => ({
+                            title: item.title,
+                            human: item.human || '',
+                            ai: item.ai || ''
+                        }));
                     const dataStr = JSON.stringify(exportData, null, 2);
                     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), dataStr], { type: "application/json;charset=utf-8" });
                     const url = URL.createObjectURL(blob);
@@ -963,31 +1033,34 @@
                     showToast(`成功导出 ${dataToExport.length} 个条目`);
                 };
 
+                // 右上角：仅维护全量导出
                 const confirmExportAll = () => {
+                    fileMenuOpen.value = false;
                     if (entries.value.length === 0) {
                         showToast('当前没有数据可导出', 'error');
                         return;
                     }
                     openModal({
-                        title: '导出全部数据',
-                        message: `将导出全部 ${entries.value.length} 个条目为 JSON，可直接导入墨韵 XP World 模组使用。确认导出？`,
+                        title: '导出维护数据',
+                        message: `将把当前全部 ${entries.value.length} 条设定导出成一个 JSON 备份文件。\n\n文件里包含每条的标题、词条说明和预注入提示词，适合备份或再次导入本工具。\n\n不会只导出提示词正文。确认导出？`,
                         confirmText: '确认导出',
                         onConfirm: () => {
-                            executeExport(entries.value, 'XP大世界_全量');
+                            executeExport(entries.value, 'XP大世界_维护全量', 'maintain');
                         }
                     });
                 };
 
-                const confirmExportSelected = () => {
+                // 批量栏：仅选中条目的提示词导出
+                const confirmExportAiSelected = () => {
                     const count = selectedIds.value.length;
                     if (count === 0) return;
                     openModal({
-                        title: '导出选中条目',
-                        message: `将导出选中的 ${count} 个条目为 JSON，可直接导入墨韵 XP World 模组使用。确认导出？`,
+                        title: '导出预注入提示词',
+                        message: `将导出已勾选的 ${count} 条设定。\n\n每条只保留「标题 + 预注入提示词」，不包含词条说明。适合导入 AI Novel 等写作工具。\n\n确认导出？`,
                         confirmText: '确认导出',
                         onConfirm: () => {
                             const toExport = entries.value.filter(e => selectedIds.value.includes(e.id));
-                            executeExport(toExport, 'XP大世界_选中导出');
+                            executeExport(toExport, 'XP大世界_提示词选中', 'ai');
                         }
                     });
                 };
@@ -1076,7 +1149,8 @@
                     const newEntry = {
                         id: genId(),
                         title: finalTitle,
-                        content: ''
+                        human: '',
+                        ai: ''
                     };
                     
                     entries.value.unshift(newEntry);
@@ -1172,12 +1246,13 @@
                     searchQuery,
                     toast,
                     totalEntries,
-                    filteredGroupedEntries,
+                    primaryTree,
                     filteredUncategorized,
                     
                     CATEGORIES,
                     PRIMARY_CATEGORIES,
                     collapsedGroups,
+                    collapsedPrimaries,
                     selectedIds,
                     
                     modal,
@@ -1210,10 +1285,11 @@
                     selectedEntryCategoryLetter,
                     confirmResetToBuiltIn,
                     confirmExportAll,
-                    confirmExportSelected,
+                    confirmExportAiSelected,
                     selectEntry,
                     clearSelection,
                     
+                    togglePrimary,
                     toggleGroup,
                     toggleExpandAll,
                     

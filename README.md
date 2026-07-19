@@ -1,43 +1,42 @@
 <p align="center">
   <h1 align="center">XP World</h1>
-  <p align="center"><em>纯前端 · 本地运行 · 零依赖部署 的 XP 设定条目管理工具</em></p>
+  <p align="center"><em>纯前端 · 本地运行的 XP 设定条目管理工具</em></p>
   <p align="center">
-    <img src="https://img.shields.io/badge/version-1.0-3B82F6?style=flat-square" alt="version">
+    <a href="https://moyun-re.github.io/xp-world/">在线体验</a> ·
+    <a href="#使用说明">说明</a> ·
+    <a href="./DEVELOPMENT.md">开发文档</a>
+  </p>
+  <p align="center">
     <img src="https://img.shields.io/badge/license-CC%20BY--NC%204.0-EF4444?style=flat-square" alt="license">
     <img src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square&logo=vue.js&logoColor=white" alt="Vue 3">
     <img src="https://img.shields.io/badge/Tailwind-CSS-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind">
-    <img src="https://img.shields.io/badge/entries-2773+-F59E0B?style=flat-square" alt="entries">
-    <img src="https://img.shields.io/badge/platform-GitHub%20Pages-181717?style=flat-square&logo=github&logoColor=white" alt="platform">
-  </p>
-  <p align="center">
-    <a href="#快速开始">🚀 快速开始</a> ·
-    <a href="#使用说明">📖 使用说明</a> ·
-    <a href="#数据格式">📦 数据格式</a> ·
-    <a href="./DEVELOPMENT.md">🛠️ 开发文档</a>
   </p>
 </p>
-
 
 ---
 
 ## 简介
 
-**XP World** 用于浏览、编辑、导出 XP 设定条目集合。内置 2700+ 条目的预设数据，打开即用，无需后端、无需安装。所有数据保存在浏览器本地，刷新不丢。可部署到任意静态托管（推荐 GitHub Pages）。
+**XP World** 用于浏览、编辑、导出 XP 设定条目集合。内置优化版条目离线可用，所有编辑自动保存在浏览器本地，刷新不丢。
+
+已在 GitHub Pages 部署：**[https://moyun-re.github.io/xp-world/](https://moyun-re.github.io/xp-world/)**
 
 ## 特性
 
 - 纯前端单文件 HTML，部署到 GitHub Pages 即可访问
-- 内置 2700+ 条目离线可用，所有编辑自动保存在浏览器本地
-- 三级分类浏览（世界观/角色/恋物/剧情/SM/重口 → A-Z → 条目）
+- 内置预设数据离线可用，编辑自动保存在浏览器本地
+- **三级分类**：一级 6 类（世界观 / 角色 / 恋物 / 剧情 / SM / 重口）→ 二级 A–Z → 条目
+- 每条含：**标题**、**词条说明**、**预注入提示词**（JSON 字段为 `title` / `human` / `ai`）
+- 维护备份导出 + 勾选「提示词导出」（给 AI Novel）
 - 支持暗色模式与手机端抽屉式侧边栏
-- 搜索框输入编号（如 `K29`）按回车直达条目
+- 搜索：编号（如 `K29`）回车直达，或关键词匹配标题 / 说明 / 提示词
 
 ## 文件结构
 
 ```
 XP World/
 ├── index.html      # 应用主程序
-├── entries.json    # 内置预设数据（2773 条 + version 字段）
+├── entries.json    # 内置预设（version + entries）
 ├── README.md       # 本文件
 └── DEVELOPMENT.md  # 开发者文档
 ```
@@ -46,61 +45,110 @@ XP World/
 
 ### 本地开发
 ```bash
-# 在 XP World/ 目录下起一个本地 HTTP 服务
-python -m http.server 8000
-# 浏览器访问 http://localhost:8000
+# 在 XP World/ 目录下起本地 HTTP 服务
+cd "XP World"
+python -m http.server 5173 --bind 127.0.0.1
+# 浏览器访问 http://127.0.0.1:5173/
 ```
 
 > 直接双击 `index.html` 用 `file://` 打开会因 CORS 拦截 `fetch` 失败，必须走 HTTP。
 
 ### 部署到 GitHub Pages
 1. Fork 仓库
-2. 在仓库 Settings → Pages → Source 选择 `Deploy from a branch` → `main` / `/root`
-3. 等待构建，访问 `https://<用户名>.github.io/<仓库名>/`
+2. Settings → Pages → Source：`Deploy from a branch` → `main` / `/root`
+3. 访问 `https://<用户名>.github.io/<仓库名>/`
 
 ## 使用说明
 
 | 操作 | 说明 |
 |---|---|
-| **左侧目录** | 点击分类展开/折叠，点击条目进入编辑 |
-| **顶部 ⌄ 目录** | 手机端点汉堡按钮展开/收起侧边栏（覆盖抽屉，编辑区不被挤压） |
-| **文件** | 下拉菜单：导入 JSON / 导出全部 / 重置为内置版本 |
-| **新建** | 选一级 + 二级分类，自动编号，只填名称即可 |
-| **搜索** | 输入编号（如 `K29`）按回车直达；或输入关键词模糊匹配标题/正文 |
-| **批量操作** | 侧边栏勾选多条 → 底部出现导出/删除按钮 |
-| **暗色** | 右上角图标切换，跟随系统首次进入 |
+| **左侧目录** | 三级折叠：一级大类 → 字母分类 → 条目 |
+| **顶部 ⌄ 目录** | 手机端汉堡按钮开关侧边栏 |
+| **文件** | 导入… / 导出维护数据 / 重置为内置版本 |
+| **新建** | 选一级 + 二级字母，自动编号，只填名称 |
+| **编辑区** | 标题 · 词条说明 · 预注入提示词（两框同风格） |
+| **搜索** | 编号回车直达；或模糊匹配标题/说明/提示词 |
+| **勾选多条** | 底部栏：**提示词导出**（仅选中）/ 删除 |
+| **暗色** | 右上角切换，首次跟随系统 |
 
 ## 数据格式
 
-### `entries.json`
+### 条目字段（逻辑名 → JSON 键）
+
+| 界面名称 | JSON 键 | 用途 |
+|----------|---------|------|
+| 标题 | `title` | 索引与展示，含分类编号（如 `A1 - 现实世界`） |
+| 词条说明 | `human` | 给人速览：场景 / 用途 |
+| 预注入提示词 | `ai` | 给 AI 的正文；「提示词导出」只导出此内容 |
+
 ```json
 {
-  "version": "2026-07-19",
+  "title": "A1 - 现实世界",
+  "human": "用一两句话说明适用场景…",
+  "ai": "将注入 AI 的提示词正文…"
+}
+```
+
+### 内置 `entries.json`（版本包装）
+
+```json
+{
+  "version": "2026-07-19-abc-r2",
   "entries": [
-    { "title": "A1 - 现实世界", "content": "..." },
-    ...
+    { "title": "A1 - 现实世界", "human": "...", "ai": "..." }
   ]
 }
 ```
 
-### 用户导出文件
+用于首次加载、版本横幅、**重置为内置版本**。
+
+### 维护导入 / 导出
+
 ```json
 [
-  { "title": "K29 - 巨乳/爆乳", "content": "..." }
+  { "title": "K29 - …", "human": "...", "ai": "..." }
 ]
 ```
 
-导出文件可直接导入墨韵 XP World 模组使用。
+- **导出**：右上角「文件 → 导出维护数据」= 当前全部条目的完整备份（标题 + 说明 + 提示词）
+- **导入**：接受上列纯数组，或带 `version` 的包装格式
+- 适合备份、换电脑、再次导入本工具
 
-## 版本管理
+### 提示词导出（勾选后）
 
-- 内置 `entries.json` 带 `version` 字段
-- 用户首次加载数据时记录 `xp_last_reset_version` 到 localStorage
-- 当服务器新版推送后，用户进入页面会在顶部看到"检测到新版"横幅，点击查看后可选择重置为最新内置版本（需在确认弹窗中二次确认，会放弃本地所有修改）
+```json
+[
+  { "title": "K29 - …", "content": "<该条预注入提示词原文>" }
+]
+```
+
+- 入口：侧边栏勾选 → 底部 **提示词导出**
+- 只含「标题 + 预注入提示词」；JSON 里正文键名为 `content`（值来自 `ai`），**不含词条说明**
+- 适合导入 AI Novel 等写作工具
+
+### 不再支持
+
+- 旧版 SillyTavern `entries` 对象 map
+- 旧主格式 `[{ "title", "content" }]` 作为正式导入
+
+## 版本与本地数据
+
+- 内置 `entries.json` 带 `version`
+- 本地键：`xp_entries`（条目）、`xp_last_reset_version`、`theme`
+- 服务器推新 `version` 后顶部横幅提示；点查看可重置（二次确认，会丢本地未备份修改）
+- **清本地条目**：页面内「重置为内置版本」，或开发者工具 Local Storage 删除 `xp_entries` 后刷新
 
 ## 预设数据
 
-预设数据来自 [XP大世界 / crazyWq](https://github.com/crazyWq) 的整理归档，由本项目筛选、整理、重新编号为 26 类连续序号体系。
+当前内置为优化版 **A / B / C 类**（以 `entries.json` 的 `version` 为准），由维护文件（如仓库根目录 `XP大世界_优化版_ABC.json`）经同步脚本写入。
+
+**不会**在改优化版 JSON 后自动更新内置。需要发布新内置时：
+
+```bash
+# 先预览
+python "XP World/scripts/sync_builtin_entries.py" --source "XP大世界_优化版_ABC.json" --version "新版本号"
+# 确认后再 --apply（详见 DEVELOPMENT.md §12）
+```
 
 ## 维护
 
